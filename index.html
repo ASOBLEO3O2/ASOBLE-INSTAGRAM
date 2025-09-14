@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ASOBLE Instagram Multi-View</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <h1>ASOBLE Instagram アカウント一覧</h1>
+    <div class="actions">
+      <button id="open-all" title="すべて新規タブで開く">すべて開く</button>
+      <small class="hint">※ブラウザのポップアップブロックを解除してください</small>
+    </div>
+  </header>
+  <main>
+    <section id="cards" class="cards" aria-live="polite"></section>
+  </main>
+  <footer class="site-footer">
+    <small>今後の追加は <code>accounts.json</code> にハンドルを追記してください。</small>
+  </footer>
+  <script src="./script.js" defer></script>
+  <noscript>JavaScript を有効にしてください。</noscript>
+</body>
+</html>
