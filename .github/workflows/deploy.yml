@@ -14,7 +14,8 @@ jobs:
       - name: Prepare static files
         run: |
           mkdir -p dist
-          cp -r index.html style.css script.js accounts.json 404.html dist/
+        cp -r index.html style.css script.js accounts.json 404.html dist/
+          ls -l dist
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
