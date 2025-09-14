@@ -12,9 +12,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Prepare static files
+        shell: bash
         run: |
           mkdir -p dist
-        cp -r index.html style.css script.js accounts.json 404.html dist/
+          cp -r index.html style.css script.js accounts.json 404.html dist/
           ls -l dist
       - uses: actions/upload-pages-artifact@v3
         with:
