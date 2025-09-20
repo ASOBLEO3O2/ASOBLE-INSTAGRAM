@@ -1,12 +1,25 @@
 (async function main(){
-  const $cards = document.getElementById('cards');
+  const $cards   = document.getElementById('cards');
   const $openAll = document.getElementById('open-all');
+  const $chart   = document.getElementById('trend');
+  const $range   = document.querySelector('.range-toggle');
+  const state = { range: '1h', accounts: [], series: new Map() }; // range: '1h' | '1d' | '1m'
   try{
     const res = await fetch('./accounts.json', { cache:'no-cache' });
     const data = await res.json();
-    const list = Array.isArray(data.accounts) ? data.accounts : [];
+　   const list = Array.isArray(data.accounts) ? data.accounts : [];
+    state.accounts = list;
+    await loadAllSeries(list);
     render(list);
+    draw();
     $openAll.addEventListener('click', () => openAll(list));
+    $range?.addEventListener('click', (e)=>{
+      const btn = e.target.closest('[data-range]');
+      if(!btn) return;
+      state.range = btn.dataset.range;
+      $range.querySelectorAll('.rt-btn').forEach(b=>b.classList.toggle('is-active', b===btn));
+      draw();
+    });
   }catch(e){
     $cards.innerHTML = `<div class="card"><div class="handle">読み込み失敗</div><div class="muted">${String(e)}</div></div>`;
     $openAll.disabled = true;
@@ -40,5 +53,102 @@
   function openAll(handles){
     // まとめて開く（ポップアップブロック回避のため、ユーザー操作1回で連続 open）
     handles.forEach(h => openOne(h));
+  }
+
+  /** === data & chart === */
+  async function loadAllSeries(handles){
+    await Promise.all(handles.map(async h=>{
+      try{
+        // 期待パス：data/timeseries/<handle>.json  （無ければ空配列）
+        const r = await fetch(`./data/timeseries/${h}.json`, { cache:'no-cache' });
+        if(!r.ok) throw 0;
+        const arr = await r.json();
+        // 正規化：{t, followers} のみ
+        const norm = (Array.isArray(arr)?arr:[]).map(x=>({ 
+          t:String(x.t||x.time||x.date), followers: Number(x.followers||x.count||x.value||0)
+        })).filter(x=>x.t && !Number.isNaN(x.followers));
+        state.series.set(h, norm);
+      }catch{ state.series.set(h, []); }
+    }));
+  }
+
+  function pickWindow(arr, range){
+    const now = Date.now();
+    const tzOffsetMin = new Date().getTimezoneOffset(); // JST なら -540
+    const ms = (k)=>({ '1h':60e3, '1d':3600e3, '1m':86400e3*32 }[k]); // '1m' は当月用に日足で後で絞る
+    // ISO(+09:00等)をDateに
+    const rows = arr.map(x=>({ t:new Date(x.t).getTime(), v:x.followers }))
+                    .filter(x=>Number.isFinite(x.t) && x.t<=now)
+                    .sort((a,b)=>a.t-b.t);
+    if(range==='1h'){
+      const from = now - 60*60e3;
+      return rows.filter(x=>x.t>=from);
+    }
+    if(range==='1d'){
+      const from = now - 24*60*60e3;
+      // 1時間足（各時間の最後のサンプル）
+      const hourly = new Map();
+      rows.forEach(x=>{
+        if(x.t<from) return;
+        const key = Math.floor(x.t/3600e3); // 時間バケット
+        hourly.set(key, x.v);
+      });
+      return [...hourly.entries()].map(([k,v])=>({ t:k*3600e3, v }));
+    }
+    // '1m' 当月日足（各日の最後のサンプル）
+    const d = new Date();
+    const start = new Date(d.getFullYear(), d.getMonth(), 1).getTime();
+    const daily = new Map();
+    rows.forEach(x=>{
+      if(x.t<start) return;
+      const dayKey = Math.floor(x.t/86400e3);
+      daily.set(dayKey, x.v);
+    });
+    return [...daily.entries()].map(([k,v])=>({ t:k*86400e3, v }));
+  }
+
+  function compose(range){
+    // 全アカウントを重ねず、まずは「合計」を描く（必要なら個別オーバーレイは後段で追加）
+    const merged = [];
+    state.accounts.forEach(h=>{
+      const arr = state.series.get(h)||[];
+      pickWindow(arr, range).forEach(p=>{
+        const key = p.t;
+        const i = merged.findIndex(x=>x.t===key);
+        if(i>=0) merged[i].v += p.v; else merged.push({ t:key, v:p.v });
+      });
+    });
+    merged.sort((a,b)=>a.t-b.t);
+    return merged;
+  }
+
+  function draw(){
+    const ctx = $chart?.getContext?.('2d');
+    if(!ctx) return;
+    const data = compose(state.range);
+    ctx.clearRect(0,0,$chart.width,$chart.height);
+    if(!data.length) return;
+    // padding
+    const L=40,R=8,T=16,B=24,W=$chart.width,H=$chart.height;
+    const xs = data.map(d=>d.t), ys = data.map(d=>d.v);
+    const xmin = Math.min(...xs), xmax = Math.max(...xs);
+    const ymin = Math.min(...ys), ymax = Math.max(...ys);
+    const x = t => L + (W-L-R) * ( (t - xmin) / Math.max(1,(xmax-xmin)) );
+    const y = v => T + (H-T-B) * (1 - ( (v - ymin) / Math.max(1,(ymax-ymin)) ));
+    // grid
+    ctx.globalAlpha = 0.25;
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1;
+    for(let i=0;i<5;i++){
+      const yy = T + (H-T-B)*i/4;
+      ctx.beginPath(); ctx.moveTo(L,yy); ctx.lineTo(W-R,yy); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    // line
+    ctx.beginPath();
+    data.forEach((p,i)=>{ i?ctx.lineTo(x(p.t), y(p.v)) : ctx.moveTo(x(p.t), y(p.v)); });
+    ctx.strokeStyle = '#6ad1e3';
+    ctx.lineWidth = 2;
+    ctx.stroke();
   }
 })();
