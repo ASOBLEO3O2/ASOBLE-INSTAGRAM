@@ -1,6 +1,7 @@
 (async function main(){
   const $cards   = document.getElementById('cards');
   const $openAll = document.getElementById('open-all');
+  const $refresh = document.getElementById('refresh');
   const $chart   = document.getElementById('trend');
   const $range   = document.querySelector('.range-toggle');
   const state = { range: '1h', accounts: [], series: new Map() }; // range: '1h' | '1d' | '1m'
@@ -21,6 +22,12 @@
       $range.querySelectorAll('.rt-btn').forEach(b=>b.classList.toggle('is-active', b===btn));
       draw();
     });
+    $refresh?.addEventListener('click', async ()=>{
+      await loadAllSeries(state.accounts);
+      try { applyCounts(); } catch {}
+      draw();
+    });
+    
   }catch(e){
     $cards.innerHTML = `<div class="card"><div class="handle">読み込み失敗</div><div class="muted">${String(e)}</div></div>`;
     $openAll.disabled = true;
