@@ -18,10 +18,12 @@ async function fetchFollowersFromProfile(handle) {
   if (!res.ok) throw new Error(`HTTP ${res.status} for ${handle}`);
   const html = await res.text();
   // 例: content="1,234 Followers, 56 Following, 78 Posts - See Instagram photos and videos from foo (@foo)"
-  const m = html.match(/property="og:description"\s+content="([^"]+)"/i);
+  // 属性順・クォート差の双方を許容（どちらかにマッチすればOK）
+  let m = html.match(/property=['"]og:description['"][^>]*content=['"]([^'"]+)['"]/i);
+  if (!m) m = html.match(/content=['"]([^'"]+)['"][^>]*property=['"]og:description['"]/i);
   if (!m) throw new Error(`og:description not found for ${handle}`);
   const s = m[1];
-  const m2 = s.match(/([\d.,]+)\s*Followers/i);
+  const m2 = s.match(/([\d.,]+)\s*(Followers|フォロワー)/i);
   if (!m2) throw new Error(`followers not found for ${handle}`);
   const norm = v=>{
     const t = String(v).trim().toLowerCase();
@@ -58,6 +60,9 @@ async function main() {
     process.exit(1);
   }
   const accounts = [];
+
+  const sleep = (ms)=> new Promise(r=>setTimeout(r, ms));
+  
   for (const h of handles) {
     try {
       const f = await fetchFollowersFromProfile(h);
@@ -66,6 +71,7 @@ async function main() {
       console.error(`fetch failed for @${h}:`, e.message);
       accounts.push({ username: h, followers_count: null, media_count: null });
     }
+    await sleep(1200); // 軽い待機で負荷・ブロック回避
   }
   const snapshot = {
     fetched_at_utc: new Date().toISOString(),
@@ -95,7 +101,11 @@ console.log("accounts fetched (scrape):", accounts.map(a => ({ u:a.username, f:a
         arr = JSON.parse(raw||"[]");
       }
     } catch {}
-    arr.push({ t: isoJST, followers: acc.followers_count ?? 0 });
+    if (Number.isFinite(acc.followers_count)) {
+      arr.push({ t: isoJST, followers: acc.followers_count });
+    } else {
+      console.warn(`skip append for @${acc.username} (no followers_count)`);
+    }    
     // 重複除去（tキーで後勝ち）
     const seen = new Map();
     arr.forEach(x => { if(x?.t) seen.set(x.t, x.followers); });
