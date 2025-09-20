@@ -37,3 +37,4 @@ jobs:
         with:
           commit_message: "chore(data): update Instagram followers snapshot"
           file_pattern: data/**
+          push_options: '--force'
