@@ -14,7 +14,12 @@
     render(list);              // DOM生成
     applyCounts();             // ← DOM直後に必ず実行
     draw();
-   $openAll.addEventListener('click', () => openAll(list));
+    $openAll.addEventListener('click', () => openAll(list));
+    $refresh?.addEventListener('click', async ()=>{
+     await loadAllSeries(state.accounts);   // JSON再読込
+     try { applyCounts(); } catch {}
+     draw();                                // グラフ再描画
+   });
     $range?.addEventListener('click', (e)=>{
       const btn = e.target.closest('[data-range]');
       if(!btn) return;
@@ -75,7 +80,7 @@
     await Promise.all(handles.map(async h=>{
       try{
         // 期待パス：data/timeseries/<handle>.json  （無ければ空配列）
-        const r = await fetch(`./data/timeseries/${h}.json`, { cache:'no-cache' });
+        const r = await fetch(`./data/timeseries/${h}.json?t=${Date.now()}`, { cache:'no-cache' });
         if(!r.ok) throw 0;
         const arr = await r.json();
         // 正規化：{t, followers} のみ
