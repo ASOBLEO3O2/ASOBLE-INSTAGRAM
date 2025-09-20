@@ -104,7 +104,12 @@
       const dayKey = Math.floor(x.t/86400e3);
       daily.set(dayKey, x.v);
     });
-    return [...daily.entries()].map(([k,v])=>({ t:k*86400e3, v }));
+     const daySeries = [...daily.entries()].map(([k,v])=>({ t:k*86400e3, v }));
+  // フォールバック：同一日内しかデータが無く1点に潰れた場合は、生データ（当月内）をそのまま使う
+  if (daySeries.length <= 1) {
+    return rows.filter(x=>x.t>=start);
+  }
+  return daySeries;
   }
 
   function compose(range){
