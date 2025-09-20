@@ -16,7 +16,7 @@ jobs:
         run: |
           mkdir -p dist
           cp -r index.html style.css script.js accounts.json 404.html \
-                privacy.html terms.html delete.html dist/
+                privacy.html terms.html delete.html data dist/
           ls -l dist
       - uses: actions/upload-pages-artifact@v3
         with:
