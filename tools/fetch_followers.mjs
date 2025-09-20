@@ -1,64 +1,35 @@
 import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
+// 収集から除外するユーザー名（カンマ区切り）
+const DENY = new Set((process.env.DENY_USERNAMES || "asobleasoble6")
+  .split(",").map(s => s.trim().toLowerCase()).filter(Boolean));
 
-const TOKEN = process.env.FB_USER_TOKEN_LONG;
-const PAGE_IDS = (process.env.PAGE_IDS || "").split(",").map(s => s.trim()).filter(Boolean);
-const IG_IDS_EXTRA = (process.env.INSTAGRAM_USER_IDS || "").split(",").map(s => s.trim()).filter(Boolean);
-// 収集から除外するユーザー名（カンマ区切り）。未指定なら管理用を既定で除外。
-const DENY = new Set(
-  (process.env.DENY_USERNAMES || "asobleasoble6")
-    .split(",").map(s => s.trim().toLowerCase()).filter(Boolean)
-);
-const API = "https://graph.facebook.com/v23.0";
-
-if (!TOKEN) {
-  console.error("FB_USER_TOKEN_LONG is missing");
-  process.exit(1);
-}
-
-async function g(url, params = {}) {
-  const u = new URL(url);
-  u.searchParams.set("access_token", TOKEN);
-  for (const [k, v] of Object.entries(params)) u.searchParams.set(k, v);
-  const res = await fetch(u, { headers: { "Accept": "application/json" }});
-  if (!res.ok) {
-    const t = await res.text();
-    throw new Error(`Graph error ${res.status}: ${t}`);
-  }
-  return res.json();
-}
-
-async function resolveIgIdsFromPages(pageIds) {
-  const ig = [];
-  for (const pid of pageIds) {
-    try {
-      const j = await g(`${API}/${pid}`, { fields: "instagram_business_account" });
-      if (j.instagram_business_account?.id) ig.push(j.instagram_business_account.id);
-    } catch (e) {
-      console.error(`resolveIgIdsFromPages failed for ${pid}:`, e.message);
+async function fetchFollowersFromProfile(handle) {
+  // 公開プロフィールHTMLを取得して <meta property="og:description"> を解析
+  const url = `https://www.instagram.com/${handle}/`;
+  const res = await fetch(url, {
+    headers: {
+      "Accept": "text/html,application/xhtml+xml",
+      "Accept-Language": "en-US,en;q=0.8",
+      "User-Agent": "Mozilla/5.0"
     }
-  }
-  return ig;
-}
-
-async function fetchAccounts(igIds) {
-  const out = [];
-  for (const id of igIds) {
-    try {
-      const j = await g(`${API}/${id}`, { fields: "username,followers_count,media_count" });
-      out.push({
-        ig_id: id,
-        username: j.username ?? null,
-        followers_count: j.followers_count ?? null,
-        media_count: j.media_count ?? null,
-      });
-    } catch (e) {
-      console.error(`fetch account failed for ${id}:`, e.message);
-    }
-  }
-  // ここで除外（小文字比較）
-  return out.filter(a => !a.username || !DENY.has(String(a.username).toLowerCase()) );  
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status} for ${handle}`);
+  const html = await res.text();
+  // 例: content="1,234 Followers, 56 Following, 78 Posts - See Instagram photos and videos from foo (@foo)"
+  const m = html.match(/property="og:description"\s+content="([^"]+)"/i);
+  if (!m) throw new Error(`og:description not found for ${handle}`);
+  const s = m[1];
+  const m2 = s.match(/([\d.,]+)\s*Followers/i);
+  if (!m2) throw new Error(`followers not found for ${handle}`);
+  const norm = v=>{
+    const t = String(v).trim().toLowerCase();
+    if (t.endsWith('m')) return Math.round(parseFloat(t)*1_000_000);
+    if (t.endsWith('k')) return Math.round(parseFloat(t)*1_000);
+    return Number(t.replace(/[.,]/g,'')); // 1,234 → 1234
+  };
+  return norm(m2[1]);
 }
 
 function today() {
@@ -77,13 +48,25 @@ async function ensureDirs() {
 
 async function main() {
   await ensureDirs();
-  const igFromPages = await resolveIgIdsFromPages(PAGE_IDS);
-  const igIds = Array.from(new Set([...igFromPages, ...IG_IDS_EXTRA])).filter(Boolean);
-  if (igIds.length === 0) {
-    console.error("No Instagram user IDs resolved. Check PAGE_IDS or INSTAGRAM_USER_IDS.");
+  // accounts.json をソースオブトゥルースにする
+  const cfg = JSON.parse(await readFile("accounts.json", "utf8"));
+  const handles = (Array.isArray(cfg?.accounts) ? cfg.accounts : [])
+    .map(h=>String(h||'').trim()).filter(Boolean)
+    .filter(h=>!DENY.has(h.toLowerCase()));
+  if (handles.length === 0) {
+    console.error("No handles in accounts.json");
     process.exit(1);
   }
-  const accounts = await fetchAccounts(igIds);
+  const accounts = [];
+  for (const h of handles) {
+    try {
+      const f = await fetchFollowersFromProfile(h);
+      accounts.push({ username: h, followers_count: f, media_count: null });
+    } catch(e) {
+      console.error(`fetch failed for @${h}:`, e.message);
+      accounts.push({ username: h, followers_count: null, media_count: null });
+    }
+  }
   const snapshot = {
     fetched_at_utc: new Date().toISOString(),
     accounts,
@@ -100,11 +83,7 @@ async function main() {
   const now = new Date();
   const isoJST = new Date(now.getTime() - now.getTimezoneOffset()*60000)
                    .toISOString().replace("Z", "+09:00");
-  console.log("accounts fetched for timeseries:",
-  accounts.map(a => ({ u: a.username, f: a.followers_count })));
-  console.log("accounts fetched for timeseries:", accounts.map(a => ({
-  　u: a.username, f: a.followers_count
-  })));
+console.log("accounts fetched (scrape):", accounts.map(a => ({ u:a.username, f:a.followers_count })));
   for (const acc of accounts) {
     if (!acc.username) continue;
     const tsPath = path.join(tsDir, `${acc.username}.json`);
