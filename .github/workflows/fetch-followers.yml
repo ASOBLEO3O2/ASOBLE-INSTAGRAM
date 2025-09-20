@@ -2,7 +2,7 @@ name: Fetch Instagram Followers
 on:
   workflow_dispatch: {}
   schedule:
-    - cron: "30 15 * * *"  # 毎日 00:30 JST（例）
+    - cron: "0 * * * *"    # 毎時00分（UTC基準）→ JSTで毎時09分台に保存時刻を +09:00 で記録
 permissions:
   contents: write
 jobs:
