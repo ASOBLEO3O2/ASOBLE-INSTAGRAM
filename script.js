@@ -8,11 +8,12 @@
     const res = await fetch('./accounts.json', { cache:'no-cache' });
     const data = await res.json();
 　   const list = Array.isArray(data.accounts) ? data.accounts : [];
-    state.accounts = list;
+      state.accounts = list;
     await loadAllSeries(list);
-    render(list);
+    render(list);   // ← カードDOMを先に作る
     draw();
-    $openAll.addEventListener('click', () => openAll(list));
+    applyCounts();  // ← DOMが出来た後に数値を流し込む（ここが不足していた）
+   $openAll.addEventListener('click', () => openAll(list));
     $range?.addEventListener('click', (e)=>{
       const btn = e.target.closest('[data-range]');
       if(!btn) return;
