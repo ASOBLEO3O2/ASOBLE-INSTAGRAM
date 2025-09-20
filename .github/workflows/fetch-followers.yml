@@ -21,6 +21,17 @@ jobs:
           INSTAGRAM_USER_IDS: ${{ secrets.INSTAGRAM_USER_IDS }}
         run: |
           node tools/fetch_followers.mjs
+      - name: Debug changed files
+        run: |
+          echo "=== git status ==="
+          git status --porcelain
+          echo "=== git diff (names) ==="
+          git diff --name-only
+          echo "=== timeseries listing ==="
+          ls -l data/timeseries || true
+          echo "=== latest summary/history timestamps ==="
+          ls -l data/summary || true
+          ls -l data/history || true
       - name: Commit data changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
