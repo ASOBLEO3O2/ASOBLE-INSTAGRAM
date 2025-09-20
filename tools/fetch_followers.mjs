@@ -94,6 +94,9 @@ async function main() {
   const now = new Date();
   const isoJST = new Date(now.getTime() - now.getTimezoneOffset()*60000)
                    .toISOString().replace("Z", "+09:00");
+  console.log("accounts fetched for timeseries:", accounts.map(a => ({
+  　u: a.username, f: a.followers_count
+  })));
   for (const acc of accounts) {
     if (!acc.username) continue;
     const tsPath = path.join(tsDir, `${acc.username}.json`);
