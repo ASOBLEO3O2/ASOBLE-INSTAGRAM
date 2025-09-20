@@ -127,7 +127,19 @@
     if(!ctx) return;
     const data = compose(state.range);
     ctx.clearRect(0,0,$chart.width,$chart.height);
-    if(!data.length) return;
+    if(!data.length){
+      const W=$chart.width, H=$chart.height;
+      ctx.save();
+      ctx.globalAlpha = 0.65;
+      ctx.fillStyle = '#bcd';
+      ctx.font = '16px system-ui, -apple-system, "Noto Sans JP", sans-serif';
+      const msg1 = 'データがありません（timeseries未配置または期間内0件）';
+      const msg2 = 'data/timeseries/<handle>.json を用意（[]でも可）';
+      ctx.fillText(msg1, (W-ctx.measureText(msg1).width)/2, H/2 - 6);
+      ctx.fillText(msg2, (W-ctx.measureText(msg2).width)/2, H/2 + 18);
+      ctx.restore();
+      return;
+    }    
     // padding
     const L=40,R=8,T=16,B=24,W=$chart.width,H=$chart.height;
     const xs = data.map(d=>d.t), ys = data.map(d=>d.v);
