@@ -5,6 +5,11 @@ import path from "node:path";
 const TOKEN = process.env.FB_USER_TOKEN_LONG;
 const PAGE_IDS = (process.env.PAGE_IDS || "").split(",").map(s => s.trim()).filter(Boolean);
 const IG_IDS_EXTRA = (process.env.INSTAGRAM_USER_IDS || "").split(",").map(s => s.trim()).filter(Boolean);
+// 収集から除外するユーザー名（カンマ区切り）。未指定なら管理用を既定で除外。
+const DENY = new Set(
+  (process.env.DENY_USERNAMES || "asobleasoble6")
+    .split(",").map(s => s.trim().toLowerCase()).filter(Boolean)
+);
 const API = "https://graph.facebook.com/v23.0";
 
 if (!TOKEN) {
@@ -52,7 +57,8 @@ async function fetchAccounts(igIds) {
       console.error(`fetch account failed for ${id}:`, e.message);
     }
   }
-  return out;
+  // ここで除外（小文字比較）
+  return out.filter(a => !a.username || !DENY.has(String(a.username).toLowerCase()) );  
 }
 
 function today() {
