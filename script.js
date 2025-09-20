@@ -9,10 +9,10 @@
     const data = await res.json();
 　   const list = Array.isArray(data.accounts) ? data.accounts : [];
       state.accounts = list;
-    await loadAllSeries(list);
-    render(list);   // ← カードDOMを先に作る
+    await loadAllSeries(list); // series を先に埋める
+    render(list);              // DOM生成
+    applyCounts();             // ← DOM直後に必ず実行
     draw();
-    applyCounts();  // ← DOMが出来た後に数値を流し込む（ここが不足していた）
    $openAll.addEventListener('click', () => openAll(list));
     $range?.addEventListener('click', (e)=>{
       const btn = e.target.closest('[data-range]');
@@ -35,7 +35,10 @@
     $cards.querySelectorAll('[data-open]').forEach(btn=>{
       btn.addEventListener('click', () => openOne(btn.getAttribute('data-open')));
     });
-  }
+   // DOM生成直後の同期タイミングで一度実行
+   try { applyCounts(); } catch {}
+   }
+
   function cardHTML(handle){
     const url = `https://www.instagram.com/${handle}/`;
     return `
@@ -73,11 +76,14 @@
           t:String(x.t||x.time||x.date), followers: Number(x.followers||x.count||x.value||0)
         })).filter(x=>x.t && !Number.isNaN(x.followers));
         state.series.set(h, norm);
-      }catch{ state.series.set(h, []); }
-    }));
-    applyCounts();
-  }
-  
+ 　　　　}catch(e){
+         console.warn('timeseries missing or unreadable:', h, e);
+         state.series.set(h, []);
+       }
+     }));
+    // series 構築直後に実行（初回 DOM 未生成でも後でまた呼ぶのでOK）
+    try { applyCounts(); } catch {}
+   }  
   function applyCounts(){
     state.accounts.forEach(h=>{
       const arr = state.series.get(h)||[];
