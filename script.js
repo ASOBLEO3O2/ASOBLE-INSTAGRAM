@@ -40,6 +40,10 @@
     return `
       <article class="card">
         <div class="handle">@${handle}</div>
+        <div class="stats">
+          <span class="count" data-h="${handle}">—</span>
+          <span class="updated" data-h="${handle}"></span>
+        </div>
         <div class="links">
           <a href="${url}" target="_blank" rel="noopener">プロフィールを開く</a>
           <button data-open="${handle}" title="新規タブで開く">新規タブ</button>
@@ -70,6 +74,27 @@
         state.series.set(h, norm);
       }catch{ state.series.set(h, []); }
     }));
+    applyCounts();
+  }
+  
+  function applyCounts(){
+    state.accounts.forEach(h=>{
+      const arr = state.series.get(h)||[];
+      const last = arr[arr.length-1];
+      const $c = document.querySelector(`.count[data-h="${h}"]`);
+      const $u = document.querySelector(`.updated[data-h="${h}"]`);
+      if(!$c||!$u) return;
+      if(last){
+        $c.textContent = last.followers.toLocaleString();
+        const d = new Date(last.t);
+        const y = d.getFullYear(), m = (d.getMonth()+1).toString().padStart(2,'0'), day = d.getDate().toString().padStart(2,'0');
+        const hh = d.getHours().toString().padStart(2,'0'), mm = d.getMinutes().toString().padStart(2,'0');
+        $u.textContent = `${y}/${m}/${day} ${hh}:${mm}`;
+      }else{
+        $c.textContent = '—';
+        $u.textContent = '';
+      }
+    });
   }
 
   function pickWindow(arr, range){
