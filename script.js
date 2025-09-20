@@ -146,6 +146,19 @@
       return;
     }    
     // padding
+  if (data.length === 1) {
+    const L=40,R=8,T=16,B=24,W=$chart.width,H=$chart.height;
+    const p = data[0];
+    const x = L + (W-L-R)*0.5;
+    const y = T + (H-T-B)*0.5;
+    // 値に応じたスケールが無いので中央に目印を出す（UI的に「データあり」を明示）
+    const ctx = $chart.getContext('2d');
+    ctx.beginPath();
+    ctx.arc(x, y, 3, 0, Math.PI*2);
+    ctx.fillStyle = '#6ad1e3';
+    ctx.fill();
+    return;
+  }
     const L=40,R=8,T=16,B=24,W=$chart.width,H=$chart.height;
     const xs = data.map(d=>d.t), ys = data.map(d=>d.v);
     const xmin = Math.min(...xs), xmax = Math.max(...xs);
