@@ -27,6 +27,8 @@ jobs:
           git status --porcelain
           echo "=== git diff (names) ==="
           git diff --name-only
+          echo "=== git show (first 20 lines of a timeseries) ==="
+          git show :data/timeseries/asoble_kitakyushu.json | head -n 20 || true
           echo "=== timeseries listing ==="
           ls -l data/timeseries || true
           echo "=== latest summary/history timestamps ==="
