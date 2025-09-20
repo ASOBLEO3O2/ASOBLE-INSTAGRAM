@@ -12,9 +12,17 @@
     <div class="actions">
       <button id="open-all" title="すべて新規タブで開く">すべて開く</button>
       <small class="hint">※ブラウザのポップアップブロックを解除してください</small>
+       <div class="range-toggle" role="group" aria-label="期間切替">
+        <button type="button" data-range="1h" class="rt-btn is-active">1時間</button>
+        <button type="button" data-range="1d" class="rt-btn">1日</button>
+        <button type="button" data-range="1m" class="rt-btn">月間</button>
+      </div>
     </div>
   </header>
   <main>
+    <section id="chart" class="chart" aria-live="polite">
+      <canvas id="trend" width="1024" height="260"></canvas>
+    </section>
     <section id="cards" class="cards" aria-live="polite"></section>
   </main>
   <footer class="site-footer">
