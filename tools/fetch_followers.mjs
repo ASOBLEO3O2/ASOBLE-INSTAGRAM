@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 
@@ -87,6 +87,34 @@ async function main() {
   await writeFile(latestPath, JSON.stringify(snapshot, null, 2));
   await writeFile(historyPath, JSON.stringify(snapshot, null, 2));
   console.log(`Wrote ${latestPath} and ${historyPath}`);
+
+  // === timeseries append ===
+  const tsDir = path.join("data", "timeseries");
+  if (!existsSync(tsDir)) await mkdir(tsDir, { recursive: true });
+  const now = new Date();
+  const isoJST = new Date(now.getTime() - now.getTimezoneOffset()*60000)
+                   .toISOString().replace("Z", "+09:00");
+  for (const acc of accounts) {
+    if (!acc.username) continue;
+    const tsPath = path.join(tsDir, `${acc.username}.json`);
+    let arr = [];
+    try {
+      if (existsSync(tsPath)) {
+        const raw = await readFile(tsPath, "utf8");
+        arr = JSON.parse(raw||"[]");
+      }
+    } catch {}
+    arr.push({ t: isoJST, followers: acc.followers_count ?? 0 });
+    // 重複除去（tキーで後勝ち）
+    const seen = new Map();
+    arr.forEach(x => { if(x?.t) seen.set(x.t, x.followers); });
+    arr = [...seen.entries()].map(([t,v])=>({t, followers:v}))
+             .sort((a,b)=> new Date(a.t)-new Date(b.t));
+    // 上限 4000 件
+    if (arr.length > 4000) arr.splice(0, arr.length-4000);
+    await writeFile(tsPath, JSON.stringify(arr, null, 2));
+    console.log(`Updated timeseries ${acc.username} (${arr.length} pts)`);
+  }
 }
 
 main().catch(err => {
