@@ -14,13 +14,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Run collector
-        env:
-          FB_USER_TOKEN_LONG: ${{ secrets.FB_USER_TOKEN_LONG }}
-          PAGE_IDS: ${{ secrets.PAGE_IDS }}
-          INSTAGRAM_USER_IDS: ${{ secrets.INSTAGRAM_USER_IDS }}
+      - name: Run collector (scrape public profiles)
         run: |
-          node tools/fetch_followers.mjs
+         node tools/fetch_followers.mjs
       - name: Debug changed files
         run: |
           echo "=== git status ==="
