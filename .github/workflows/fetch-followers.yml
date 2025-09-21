@@ -11,7 +11,10 @@ permissions:
 jobs:
   fetch:
     runs-on: ubuntu-latest
-    environment: OHTSU
+    strategy:
+      matrix:
+        env: [OHTSU, KITAKYUSHU, HONAMI]
+    environment: ${{ matrix.env }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
