@@ -112,7 +112,8 @@
        const norm = (Array.isArray(arr)?arr:[]).map(x=>({ 
           t:String(x.t||x.time||x.date), followers: Number(x.followers ?? x.count ?? x.value)
         })).filter(x=>x.t && !Number.isNaN(x.followers));
-        }catch(e){
+       state.series.set(h, norm);
+      　}catch(e){
          console.warn('timeseries missing or unreadable:', h, e);
          state.series.set(h, []);
        }
