@@ -12,7 +12,6 @@ jobs:
   fetch:
     runs-on: ubuntu-latest
     environment: OHTSU
-    environment: ${{ matrix.env }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
