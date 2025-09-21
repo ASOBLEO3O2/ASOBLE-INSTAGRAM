@@ -148,9 +148,12 @@
       if(last){
         $c.textContent = last.followers.toLocaleString();
         const d = new Date(last.t);
-        const y = d.getFullYear(), m = (d.getMonth()+1).toString().padStart(2,'0'), day = d.getDate().toString().padStart(2,'0');
-        const hh = d.getHours().toString().padStart(2,'0'), mm = d.getMinutes().toString().padStart(2,'0');
-        $u.textContent = `${y}/${m}/${day} ${hh}:${mm}`;
+        const f = new Intl.DateTimeFormat('ja-JP', {
+          timeZone: 'Asia/Tokyo', hour12: false,
+          year: 'numeric', month: '2-digit', day: '2-digit',
+          hour: '2-digit', minute: '2-digit'
+        }).formatToParts(d).reduce((o,p)=> (o[p.type]=p.value, o), {});
+        $u.textContent = `${f.year}/${f.month}/${f.day} ${f.hour}:${f.minute}`;
          // Δ（選択レンジの増減）：欠測は0化せず、ウィンドウ内の最初と最後のみで算出
         try {
           const win = pickWindow(arr, state.range);
