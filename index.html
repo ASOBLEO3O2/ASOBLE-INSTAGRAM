@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ASOBLE Instagram Multi-View</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <header class="site-header">
+    <h1>ASOBLE Instagram アカウント一覧</h1>
+    <div class="actions">
+      <button id="open-all" title="すべて新規タブで開く">すべて開く</button>
+      <button id="refresh" title="最新のデータを読み直す">最新に更新</button>
+      <small class="hint">※ブラウザのポップアップブロックを解除してください</small>
+       <div class="range-toggle" role="group" aria-label="期間切替">
+        <button type="button" data-range="1h" class="rt-btn is-active">1時間</button>
+        <button type="button" data-range="1d" class="rt-btn">1日</button>
+        <button type="button" data-range="1m" class="rt-btn">月間</button>
+      </div>
+    </div>
+  </header>
+  <main>
+    <section id="chart" class="chart" aria-live="polite">
+      <canvas id="trend" width="1024" height="260"></canvas>
+      <div id="chips" class="chips"></div>
+    </section>
+    <section id="cards" class="cards" aria-live="polite"></section>
+  </main>
+  <footer class="site-footer">
+    <small>今後の追加は <code>accounts.json</code> にハンドルを追記してください。</small>
+  </footer>
+  <script src="./script.js" defer></script>
+  <noscript>JavaScript を有効にしてください。</noscript>
+</body>
+</html>
