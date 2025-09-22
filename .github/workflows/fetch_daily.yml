@@ -22,22 +22,7 @@ jobs:
           echo "event_name=${{ github.event_name }}"
           node -e "console.log('now(UTC)=', new Date().toISOString())"
 
-  　　- name: Run collector (account insights daily)
-        env:
-          FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
-          IG_ID:         ${{ secrets.IG_ID }}
-          IG_USERNAME:   ${{ secrets.IG_USERNAME }}
-        run: node scripts/collectors/account_insights_daily.mjs
-
-      - name: Commit & push if changed
-        run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git diff --staged --quiet || git commit -m "chore(data): daily insights $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-          git push
-          
-       - name: Debug whoami (token & ig-id)
+      - name: Debug whoami (token & ig-id)
         env:
           FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
           IG_ID: ${{ secrets.IG_ID }}
@@ -47,8 +32,16 @@ jobs:
           node -e "const u=new URLSearchParams({fields:'id,username',access_token:process.env.FB_PAGE_TOKEN}); fetch('https://graph.facebook.com/v23.0/'+process.env.IG_ID+'?'+u.toString()).then(r=>r.text()).then(t=>console.log(t)).catch(e=>console.error(e))"
 
       - name: Run collector (account insights daily)
-         env:
-           FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
-           IG_ID:         ${{ secrets.IG_ID }}
-          IG_USERNAME:   ${{ secrets.IG_USERNAME }}
-         run: node scripts/collectors/account_insights_daily.mjs
+        env:
+          FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
+          IG_ID: ${{ secrets.IG_ID }}
+          IG_USERNAME: ${{ secrets.IG_USERNAME }}
+        run: node scripts/collectors/account_insights_daily.mjs
+
+      - name: Commit & push if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --staged --quiet || git commit -m "chore(data): daily insights $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          git push
