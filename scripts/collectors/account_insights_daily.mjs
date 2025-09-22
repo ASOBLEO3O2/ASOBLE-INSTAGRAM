@@ -18,8 +18,9 @@ async function getUsername(igId, token) {
 }
 
 async function getAccountInsights(){
- const metrics = ['impressions','reach','profile_views'];
- const j = await callGraph(`/${IG_ID}/insights?metric=${metrics.join(',')}&period=day`, TOKEN);  return Array.isArray(j?.data) ? j.data : [];
+  const metrics = ['impressions','reach','profile_views'];
+  const j = await callGraph(`/${IG_ID}/insights`, { metric: metrics.join(','), period:'day' }, { token:TOKEN });
+  return Array.isArray(j?.data) ? j.data : [];
 }
 
 function normalizeDaily(data){
