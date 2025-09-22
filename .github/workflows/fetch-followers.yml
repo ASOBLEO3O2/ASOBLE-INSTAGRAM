@@ -17,7 +17,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: "18" }
-      - name: Run collector (API)
+      - name: Debug (event & time)
+        run: |
+          echo "event_name=${{ github.event_name }}"
+          node -e "console.log('now(UTC)=', new Date().toISOString())"      - name: Run collector (API)
         env:
           FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
           IG_ID: ${{ secrets.IG_ID }}
