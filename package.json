@@ -1,0 +1,6 @@
+{
+  "name": "asoble-instagram",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=18" }
+}
