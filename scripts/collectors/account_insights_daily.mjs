@@ -10,17 +10,42 @@ if (!TOKEN || !IG_ID) {
   process.exit(1);
 }
 
-async function main(){
-  // アカウント全体インサイト（日次）
-  const metrics = ['impressions','reach','profile_views','website_clicks'];
-  const data = await callGraph(`/${IG_ID}/insights`, { metric: metrics.join(','), period:'day' }, { token:TOKEN });
+async function getUsername(){
+  const j = await callGraph(`/${IG_ID}`, { fields:'username' }, { token:TOKEN });
+  const u = String(j?.username||'').trim();
+  if(!u) throw new Error('username not found');
+  return u;
+}
 
+async function getAccountInsights(){
+  const metrics = ['impressions','reach','profile_views','website_clicks'];
+  const j = await callGraph(`/${IG_ID}/insights`, { metric: metrics.join(','), period:'day' }, { token:TOKEN });
+  return Array.isArray(j?.data) ? j.data : [];
+}
+
+function normalizeDaily(data){
+  // Graph APIの日次は配列（metricごとに values[{value, end_time}]）
+  // 当日分の latest をまとめる（欠測は含めない）
+  const out = {};
+  for(const m of data){
+    const name = m?.name;
+    const vals = Array.isArray(m?.values) ? m.values : [];
+    const last = vals[vals.length-1];
+    const v = (last && (last.value ?? last[count] ?? null));
+    if (name && (v!==undefined)) out[name] = v;
+  }
+  return out;
+}
+
+async function main(){
+  const username = await getUsername();
+  const daily = normalizeDaily(await getAccountInsights());
   const date = ymdJST();
-  const outDir = path.join('data','account','__STORE__'); // 後で username で置換
+  const payload = { date, generated_at: isoJST(), account: username, source:'ig_graph_v23.0', metrics: daily };
+
+  const outDir = path.join('data','account', username);
   await ensureDir(outDir);
   const outPath = path.join(outDir, `${date}.json`);
-  const payload = { date, generated_at: isoJST(), data };
-
   const changed = await writeJsonPretty(outPath, payload);
   console.log(`account_insights_daily: ${changed?'updated':'nochange'} ${outPath}`);
 }
