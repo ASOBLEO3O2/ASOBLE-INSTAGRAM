@@ -1,8 +1,8 @@
 name: Fetch Instagram (1 store) and commit
 
 on:
-　schedule:
- 　　- cron: "10 * * * *"   # 毎時 xx:10（UTC）。JSTでも毎時動く
+  schedule:
+    - cron: "10 * * * *"   # 毎時 xx:10 (UTC)。JSTでも毎時動く
    workflow_dispatch:
 
 permissions:
