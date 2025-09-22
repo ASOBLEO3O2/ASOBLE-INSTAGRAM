@@ -18,9 +18,8 @@ async function getUsername(igId, token) {
 }
 
 async function getAccountInsights(){
-  const metrics = ['impressions','reach','profile_views','website_clicks'];
-  const j = await callGraph(`/${IG_ID}/insights`, { metric: metrics.join(','), period:'day' }, { token:TOKEN });
-  return Array.isArray(j?.data) ? j.data : [];
+ const metrics = ['impressions','reach','profile_views'];
+ const j = await callGraph(`/${IG_ID}/insights?metric=${metrics.join(',')}&period=day`, TOKEN);  return Array.isArray(j?.data) ? j.data : [];
 }
 
 function normalizeDaily(data){
@@ -31,14 +30,14 @@ function normalizeDaily(data){
     const name = m?.name;
     const vals = Array.isArray(m?.values) ? m.values : [];
     const last = vals[vals.length-1];
-    const v = (last && (last.value ?? last[count] ?? null));
+    const v = last?.value;    
     if (name && (v!==undefined)) out[name] = v;
   }
   return out;
 }
 
 async function main(){
-  const username = await getUsername();
+  const username = await getUsername(IG_ID, TOKEN);
   const daily = normalizeDaily(await getAccountInsights());
   const date = ymdJST();
   const payload = { date, generated_at: isoJST(), account: username, source:'ig_graph_v23.0', metrics: daily };
