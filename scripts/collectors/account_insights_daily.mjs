@@ -10,11 +10,11 @@ if (!TOKEN || !IG_ID) {
   process.exit(1);
 }
 
-async function getUsername(){
-  const j = await callGraph(`/${IG_ID}`, { fields:'username' }, { token:TOKEN });
-  const u = String(j?.username||'').trim();
-  if(!u) throw new Error('username not found');
-  return u;
+async function getUsername(igId, token) {
+  if (process.env.IG_USERNAME) return process.env.IG_USERNAME;
+  const data = await callGraph(`${igId}?fields=username`, token);
+  if (!data.username) throw new Error('username not found');
+  return data.username;
 }
 
 async function getAccountInsights(){
