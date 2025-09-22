@@ -10,9 +10,9 @@ if (!TOKEN || !IG_ID) {
 }
 
 async function jstNowISO(){
-  const now = new Date();
-  const iso = new Date(now.getTime() - now.getTimezoneOffset()*60000).toISOString();
-  return iso.replace("Z", "+09:00");
+  // GitHub Actions は UTC なので、UTC→JST(+09:00) を明示的に補正して保存
+  const jst = new Date(Date.now() + 9*60*60*1000);
+  return jst.toISOString().replace("Z", "+09:00");
 }
 
 async function ensure(dir){ if(!existsSync(dir)) await mkdir(dir,{recursive:true}); }
