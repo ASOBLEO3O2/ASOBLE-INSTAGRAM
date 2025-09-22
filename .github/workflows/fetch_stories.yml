@@ -1,0 +1,32 @@
+name: Fetch Instagram (stories)
+
+on:
+  schedule:
+    - cron: "0 */3 * * *"  # every 3 hours
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-stories:
+    runs-on: ubuntu-latest
+    environment: OHTU
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "18" }
+
+      - name: Run collector (stories_insights_periodic)
+        env:
+          FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
+          IG_ID: ${{ secrets.IG_ID }}
+        run: node scripts/collectors/stories_insights_periodic.mjs
+
+      - name: Commit & push if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --staged --quiet || git commit -m "chore(data): stories $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          git push
