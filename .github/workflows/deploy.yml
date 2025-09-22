@@ -3,8 +3,10 @@ name: Deploy static site to GitHub Pages
 on:
   push:
     branches: [ "main" ]
+  workflow_run:
+    workflows: [ "Fetch Instagram (1 store) and commit" ]
+    types: [ completed ]  
   workflow_dispatch:
-
 permissions:
   contents: read
   pages: write
