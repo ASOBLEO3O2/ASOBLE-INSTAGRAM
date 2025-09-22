@@ -7,11 +7,12 @@ const TOKEN = process.env.FB_PAGE_TOKEN;
 const IG_ID = process.env.IG_ID;
 if (!TOKEN || !IG_ID) { console.error('FB_PAGE_TOKEN or IG_ID is missing.'); process.exit(1); }
 
-async function getUsername(){
-  const j = await callGraph(`/${IG_ID}`, { fields:'username' }, { token:TOKEN });
-  const u = String(j?.username||'').trim();
-  if(!u) throw new Error('username not found');
-  return u;
+async function getUsername(igId, token) {
+  // Secrets に IG_USERNAME が設定されていればそれを優先
+  if (process.env.IG_USERNAME) return process.env.IG_USERNAME;
+  const data = await callGraph(`${igId}?fields=username`, token);
+  if (!data.username) throw new Error("username not found");
+  return data.username;
 }
 
 async function fetchRecentMediaIds(limit=50){
