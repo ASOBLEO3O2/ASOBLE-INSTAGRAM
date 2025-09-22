@@ -1,0 +1,37 @@
+name: Fetch Instagram (daily insights)
+
+on:
+  schedule:
+    - cron: "20 15 * * *"  # JST 00:20
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-daily:
+    runs-on: ubuntu-latest
+    environment: OHTU
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "18" }
+
+      - name: Debug (event & time)
+        run: |
+          echo "event_name=${{ github.event_name }}"
+          node -e "console.log('now(UTC)=', new Date().toISOString())"
+
+      - name: Run collector (account insights daily)
+        env:
+          FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
+          IG_ID: ${{ secrets.IG_ID }}
+        run: node scripts/collectors/account_insights_daily.mjs
+
+      - name: Commit & push if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --staged --quiet || git commit -m "chore(data): daily insights $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          git push
