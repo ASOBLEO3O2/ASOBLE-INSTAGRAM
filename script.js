@@ -153,7 +153,7 @@
           year: 'numeric', month: '2-digit', day: '2-digit',
           hour: '2-digit', minute: '2-digit'
         }).formatToParts(d).reduce((o,p)=> (o[p.type]=p.value, o), {});
-        $u.textContent = `${f.year}/${f.month}/${f.day} ${f.hour}:${f.minute}`;
+        $u.textContent = `${f.year}/${f.month}/${f.day} ${f.hour}:${f.minute} JST`;
          // Δ（選択レンジの増減）：欠測は0化せず、ウィンドウ内の最初と最後のみで算出
         try {
           const win = pickWindow(arr, state.range);
