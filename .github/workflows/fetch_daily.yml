@@ -11,12 +11,24 @@ permissions:
 
 jobs:
   fetch-daily:
+    # 同一ブランチでの並行実行を防止
+    concurrency:
+      group: fetch-daily-${{ github.ref }}
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     environment: OHTU
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: "18" }
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-node18-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            npm-${{ runner.os }}-node18-
 
       - name: Debug (event & time)
         run: |
@@ -70,3 +82,12 @@ jobs:
           git add -A
           git commit -m "chore: update daily insights [skip ci]"
           git push
+      - name: Upload data artifact (always)
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-insights-${{ github.run_id }}
+          path: |
+            data/**
+          if-no-files-found: warn
+          retention-days: 14
