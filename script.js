@@ -87,7 +87,7 @@
           t:String(x.t||x.time||x.date), followers: Number(x.followers ?? x.count ?? x.value)
         })).filter(x=>x.t && !Number.isNaN(x.followers));
        state.series.set(h, norm);
-      　}catch(e){
+      }catch(e){
          console.warn('timeseries missing or unreadable:', h, e);
          state.series.set(h, []);
        }
@@ -163,8 +163,7 @@
 
   function pickWindow(arr, range){
     const now = Date.now();
-    const tzOffsetMin = new Date().getTimezoneOffset(); // JST なら -540
-    const ms = (k)=>({ '1h':60e3, '1d':3600e3, '1m':86400e3*32 }[k]); // '1m' は当月用に日足で後で絞る
+  // (unused vars removed)
     // ISO(+09:00等)をDateに
     const rows = arr.map(x=>({ t:new Date(x.t).getTime(), v:x.followers }))
                     .filter(x=>Number.isFinite(x.t) && x.t<=now)
@@ -240,8 +239,7 @@
     const p = data[0];
     const x = L + (W-L-R)*0.5;
     const y = T + (H-T-B)*0.5;
-    // 値に応じたスケールが無いので中央に目印を出す（UI的に「データあり」を明示）
-    const ctx = $chart.getContext('2d');
+     // 値に応じたスケールが無いので中央に目印を出す（UI的に「データあり」を明示）
     ctx.beginPath();
     ctx.arc(x, y, 3, 0, Math.PI*2);
     ctx.fillStyle = '#6ad1e3';
