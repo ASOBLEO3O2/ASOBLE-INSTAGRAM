@@ -58,12 +58,15 @@ jobs:
 
       - name: Commit & push if changed
         run: |
-          if git diff --quiet; then
+          # 追跡済み変更・未追跡ファイルの両方を検出
+          if [ -z "$(git status --porcelain)" ]; then
             echo "No changes; skip commit."
             exit 0
           fi
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # 並行実行や手動commitとの競合を低減
+          git pull --rebase
           git add -A
           git commit -m "chore: update daily insights [skip ci]"
           git push
