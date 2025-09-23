@@ -2,10 +2,21 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 
-const TOKEN = process.env.FB_PAGE_TOKEN;
-const IG_ID = process.env.IG_ID;
+// --- CLI引数サポート（未指定なら従来どおり環境変数を使用） ---
+function parseArgs(argv = process.argv.slice(2)){
+  const out = {};
+  for (let i=0; i<argv.length; i++){
+    const a = argv[i];
+    if (a === '--token') out.token = argv[++i];
+    else if (a === '--ig-id') out.igId = argv[++i];
+  }
+  return out;
+}
+const __args = parseArgs();
+const TOKEN = __args.token || process.env.FB_PAGE_TOKEN;
+const IG_ID  = __args.igId  || process.env.IG_ID;
 if (!TOKEN || !IG_ID) {
-  console.error("FB_PAGE_TOKEN or IG_ID is missing.");
+  console.error("FB_PAGE_TOKEN or IG_ID is missing (you can also pass --token and --ig-id).");
   process.exit(1);
 }
 
