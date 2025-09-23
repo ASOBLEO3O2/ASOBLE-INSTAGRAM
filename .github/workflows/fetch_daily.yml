@@ -88,11 +88,10 @@ jobs:
             exit 0
           fi
           git config user.name  "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # 並行実行や手動commitとの競合を低減
-          git pull --rebase
-          git add -A
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"            git add -A
           git commit -m "chore: update daily insights [skip ci]"
+          # 並行実行や手動commitとの競合を低減（クリーンな状態で実行）
+          git pull --rebase
           git push
       - name: Upload data artifact (always)
         if: ${{ always() }}
