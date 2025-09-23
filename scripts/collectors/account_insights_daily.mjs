@@ -19,10 +19,10 @@ async function getUsername(igId, token) {
 
 async function getAccountInsights(){
   // Graph #100 回避：total_value 必須メトリクスを分割して取得
-  const normalMetrics = ['reach','impressions'];
+  const normalMetrics = ['reach'];
   const totalMetrics  = ['profile_views','accounts_engaged'];
   // 許可メトリクス（想定外の混入を事前に遮断）
-  const ALLOW = new Set(['reach','impressions','profile_views','accounts_engaged']);
+  const ALLOW = new Set(['reach','profile_views','accounts_engaged']);
   const out = [];
 
   // 通常系（period=day のみ）
