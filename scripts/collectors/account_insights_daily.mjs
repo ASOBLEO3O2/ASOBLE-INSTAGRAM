@@ -21,12 +21,15 @@ async function getAccountInsights(){
   // Graph #100 回避：total_value 必須メトリクスを分割して取得
   const normalMetrics = ['reach','impressions'];
   const totalMetrics  = ['profile_views','accounts_engaged'];
+  // 予防: 許可リスト外のメトリクスが混入した場合は弾く
+  const allow = new Set([...normalMetrics, ...totalMetrics]);
   const out = [];
 
   // 通常系（period=day のみ）
   if (normalMetrics.length){
+    const metrics = normalMetrics.filter(m => allow.has(m));
     const j1 = await callGraph(`/${IG_ID}/insights`,
-      { metric: normalMetrics.join(','), period:'day' },
+      { metric: metrics.join(','), period:'day' },
       { token: TOKEN }
     );
     if (Array.isArray(j1?.data)) out.push(...j1.data);
@@ -34,8 +37,9 @@ async function getAccountInsights(){
 
   // total_value 系（metric_type=total_value を付与）
   if (totalMetrics.length){
+    const metrics = totalMetrics.filter(m => allow.has(m));
     const j2 = await callGraph(`/${IG_ID}/insights`,
-      { metric: totalMetrics.join(','), period:'day', metric_type:'total_value' },
+      { metric: metrics.join(','), period:'day', metric_type:'total_value' },
       { token: TOKEN }
     );
     if (Array.isArray(j2?.data)) out.push(...j2.data);
