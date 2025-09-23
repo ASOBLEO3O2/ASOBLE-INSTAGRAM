@@ -22,6 +22,23 @@ jobs:
           echo "event_name=${{ github.event_name }}"
           node -e "console.log('now(UTC)=', new Date().toISOString())"
 
+      - name: Debug token & mapping (preflight)
+        env:
+          FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
+          IG_ID:         ${{ secrets.IG_ID }}
+          PAGE_ID:       "785461964653257"
+        run: |
+          echo "IG_ID=$IG_ID"
+          node -e "const t=process.env.FB_PAGE_TOKEN; console.log('TOKEN_HEAD_TAIL=', t? t.slice(0,8)+'...'+t.slice(-6) : 'none')"
+          # USER判定：/me/accounts が成功すれば USER トークン
+          node -e "const u=new URLSearchParams({fields:'id,name,instagram_business_account{id,username}',access_token:process.env.FB_PAGE_TOKEN}); fetch('https://graph.facebook.com/v23.0/me/accounts?'+u.toString()).then(r=>r.text()).then(t=>console.log('ME_ACCOUNTS=',t)).catch(e=>console.error(e))"
+          # ページ→IGの実紐づけ
+          node -e "const u=new URLSearchParams({fields:'instagram_business_account{id,username}',access_token:process.env.FB_PAGE_TOKEN}); fetch('https://graph.facebook.com/v23.0/'+process.env.PAGE_ID+'?'+u.toString()).then(r=>r.text()).then(t=>console.log('PAGE_LOOKUP=',t)).catch(e=>console.error(e))"
+          # IGユーザー直アクセス可否
+          node -e "const u=new URLSearchParams({fields:'id,username',access_token:process.env.FB_PAGE_TOKEN}); fetch('https://graph.facebook.com/v23.0/'+process.env.IG_ID+'?'+u.toString()).then(r=>r.text()).then(t=>console.log('IG_BASIC=',t)).catch(e=>console.error(e))"
+          # Insights最小（切り分け用）
+          node -e "const u=new URLSearchParams({metric:'impressions',period:'day',access_token:process.env.FB_PAGE_TOKEN}); fetch('https://graph.facebook.com/v23.0/'+process.env.IG_ID+'/insights?'+u.toString()).then(r=>r.text()).then(t=>console.log('IG_INSIGHTS=',t)).catch(e=>console.error(e))"
+
       - name: Debug whoami (token & ig-id)
         env:
           FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
