@@ -1,9 +1,10 @@
 name: Fetch Instagram (daily insights)
 
 on:
-  schedule:
-    - cron: "20 15 * * *"  # JST 00:20
   workflow_dispatch: {}
+  schedule:
+    # 毎日 00:10 UTC（= JST 09:10）に実行
+    - cron: "10 0 * * *"
 
 permissions:
   contents: write
@@ -57,8 +58,12 @@ jobs:
 
       - name: Commit & push if changed
         run: |
+          if git diff --quiet; then
+            echo "No changes; skip commit."
+            exit 0
+          fi
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git diff --staged --quiet || git commit -m "chore(data): daily insights $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          git commit -m "chore: update daily insights [skip ci]"
           git push
