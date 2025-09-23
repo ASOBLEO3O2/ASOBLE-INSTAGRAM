@@ -21,28 +21,34 @@ async function getAccountInsights(){
   // Graph #100 回避：total_value 必須メトリクスを分割して取得
   const normalMetrics = ['reach','impressions'];
   const totalMetrics  = ['profile_views','accounts_engaged'];
-  // 予防: 許可リスト外のメトリクスが混入した場合は弾く
-  const allow = new Set([...normalMetrics, ...totalMetrics]);
+  // 許可メトリクス（想定外の混入を事前に遮断）
+  const ALLOW = new Set(['reach','impressions','profile_views','accounts_engaged']);
   const out = [];
 
   // 通常系（period=day のみ）
-  if (normalMetrics.length){
-    const metrics = normalMetrics.filter(m => allow.has(m));
-    const j1 = await callGraph(`/${IG_ID}/insights`,
-      { metric: metrics.join(','), period:'day' },
-      { token: TOKEN }
-    );
-    if (Array.isArray(j1?.data)) out.push(...j1.data);
+    if (normalMetrics.length){
+    const metrics1 = normalMetrics.filter(m => ALLOW.has(m));
+    if (metrics1.length) {
+      console.log('IG insights(normal):', metrics1.join(','));
+      const j1 = await callGraph(`/${IG_ID}/insights`,
+        { metric: metrics1.join(','), period:'day' },
+        { token: TOKEN }
+      );
+      if (Array.isArray(j1?.data)) out.push(...j1.data);
+    }
   }
 
   // total_value 系（metric_type=total_value を付与）
   if (totalMetrics.length){
-    const metrics = totalMetrics.filter(m => allow.has(m));
-    const j2 = await callGraph(`/${IG_ID}/insights`,
-      { metric: metrics.join(','), period:'day', metric_type:'total_value' },
-      { token: TOKEN }
-    );
-    if (Array.isArray(j2?.data)) out.push(...j2.data);
+    const metrics2 = totalMetrics.filter(m => ALLOW.has(m));
+    if (metrics2.length) {
+      console.log('IG insights(total_value):', metrics2.join(','));
+      const j2 = await callGraph(`/${IG_ID}/insights`,
+        { metric: metrics2.join(','), period:'day', metric_type:'total_value' },
+        { token: TOKEN }
+      );
+      if (Array.isArray(j2?.data)) out.push(...j2.data);
+    }
   }
   return out;
 }
