@@ -15,36 +15,10 @@
     applyCounts();             // ← DOM直後に必ず実行
     draw();
     $openAll.addEventListener('click', () => openAll(list));
+
     $refresh?.addEventListener('click', async ()=>{
       await loadAllSeries(state.accounts);   // JSON再読込
       try { applyCounts(); } catch {}
-    // --- deterministic color palette ---
-  function colorFor(handle){
-    const palette = [
-      '#f26d6d','#6db3f2','#f2c26d','#7bd389','#b28df2',
-      '#f28def','#6df2d0','#d3f26d','#f29e6d','#6d8ff2'
-    ];
-    let h = 2166136261>>>0; // FNV-1a
-    for(let i=0;i<handle.length;i++){ h ^= handle.charCodeAt(i); h = Math.imul(h, 16777619); }
-    return palette[Math.abs(h)%palette.length];
-  }
-
-  // 既存の renderChips がある前提で最小差分（無い場合は無害）
-  function renderChips(handles){
-    const $chips = document.getElementById('chips');
-    if(!$chips) return;
-    $chips.innerHTML = handles.map(h=>(
-      `<span class="chip" data-h="${h}"><i class="swatch" style="background:${colorFor(h)}"></i>@${h}</span>`
-    )).join('');
-    $chips.querySelectorAll('.chip').forEach(ch=>{
-      ch.addEventListener('click', ()=>{
-        const h = ch.getAttribute('data-h');
-        if(state.overlays.has(h)) state.overlays.delete(h); else state.overlays.add(h);
-        ch.classList.toggle('active', state.overlays.has(h));
-        draw();
-      });
-    });
-  }
       draw();                                // グラフ再描画
     });
 
@@ -123,10 +97,20 @@
    renderChips(handles);
    }
 
+  // --- deterministic color palette (global) ---
+  function colorFor(handle){
+    const palette = ['#f26d6d','#6db3f2','#f2c26d','#7bd389','#b28df2','#f28def','#6df2d0','#d3f26d','#f29e6d','#6d8ff2'];
+    let h = 2166136261>>>0; // FNV-1a
+    for(let i=0;i<handle.length;i++){ h ^= handle.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return palette[Math.abs(h)%palette.length];
+  }
+
   function renderChips(handles){
-    const $chips = document.getElementById('chips');
+      const $chips = document.getElementById('chips');
     if(!$chips) return;
-    $chips.innerHTML = handles.map(h=>`<span class="chip" data-h="${h}">@${h}</span>`).join('');
+       $chips.innerHTML = handles.map(h=>(
+      `<span class="chip" data-h="${h}"><i class="swatch" style="background:${colorFor(h)}"></i>@${h}</span>`
+    )).join('');
     $chips.querySelectorAll('.chip').forEach(ch=>{
       ch.addEventListener('click', ()=>{
         const h = ch.getAttribute('data-h');
