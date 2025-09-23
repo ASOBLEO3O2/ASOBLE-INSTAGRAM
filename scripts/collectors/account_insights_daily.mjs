@@ -21,7 +21,8 @@ async function getAccountInsights(){
 
   // 切り分けのため、まずは API で確実に通る 1 指標に限定
   const metrics = ['impressions'];
-  const j = await callGraph(`/${IG_ID}/insights`, { metric: metrics.join(','), period:'day' }, { token:TOKEN });
+  // params経由ではなく、URL直書きで metric/period を確実に指定
+  const j = await callGraph(`/${IG_ID}/insights?metric=${metrics.join(',')}&period=day`, {}, { token: TOKEN });
   return Array.isArray(j?.data) ? j.data : [];
 }
 
