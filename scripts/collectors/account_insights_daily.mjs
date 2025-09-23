@@ -18,10 +18,29 @@ async function getUsername(igId, token) {
 }
 
 async function getAccountInsights(){
+  // Graph #100 回避：total_value 必須メトリクスを分割して取得
+  const normalMetrics = ['reach','follower_count'];
+  const totalMetrics  = ['profile_views','website_clicks'];
+  const out = [];
 
- const metrics = ['reach','follower_count','profile_views','website_clicks'];
- const j = await callGraph(`/${IG_ID}/insights`, { metric: metrics.join(','), period:'day' }, { token:TOKEN });  return Array.isArray(j?.data) ? j.data : [];
-  return Array.isArray(j?.data) ? j.data : [];
+  // 通常系（period=day のみ）
+  if (normalMetrics.length){
+    const j1 = await callGraph(`/${IG_ID}/insights`,
+      { metric: normalMetrics.join(','), period:'day' },
+      { token: TOKEN }
+    );
+    if (Array.isArray(j1?.data)) out.push(...j1.data);
+  }
+
+  // total_value 系（metric_type=total_value を付与）
+  if (totalMetrics.length){
+    const j2 = await callGraph(`/${IG_ID}/insights`,
+      { metric: totalMetrics.join(','), period:'day', metric_type:'total_value' },
+      { token: TOKEN }
+    );
+    if (Array.isArray(j2?.data)) out.push(...j2.data);
+  }
+  return out;
 }
 
 function normalizeDaily(data){
