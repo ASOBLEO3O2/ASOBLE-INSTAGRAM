@@ -21,7 +21,6 @@ async function getAccountInsights(){
   // Graph #100 回避：total_value 必須メトリクスを分割して取得
   const normalMetrics = ['reach'];
   const totalMetrics  = ['profile_views','website_clicks','accounts_engaged'];
-  const totalMetrics  = ['profile_views','website_clicks'];
   const out = [];
 
   // 通常系（period=day のみ）
