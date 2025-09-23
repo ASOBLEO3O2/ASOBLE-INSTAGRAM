@@ -79,7 +79,19 @@ jobs:
           echo "Collector failed after 3 attempts" >&2
             exit 1
           fi
-
+      # ブランチ名を GITHUB_REF から安全に抽出（例: refs/heads/main → main）
+      BRANCH="${GITHUB_REF#refs/heads/}"
+       if [ -z "$BRANCH" ] || [ "$BRANCH" = "$GITHUB_REF" ]; then
+         echo "Not on a branch (GITHUB_REF=$GITHUB_REF). Skip commit/push."
+         exit 0
+       fi
+       # ブランチに乗り換え（detached HEAD 回避）
+       git switch -C "$BRANCH"
+       git add -A
+       git commit -m "chore: update daily insights [skip ci]"
+       # 並行実行や手動commitとの競合を低減（クリーンな状態で実行）
+       git pull --rebase origin "$BRANCH"
+       git push origin HEAD:"$GITHUB_REF"
       - name: Commit & push if changed
         run: |
           # 追跡済み変更・未追跡ファイルの両方を検出
@@ -89,13 +101,7 @@ jobs:
           fi
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"            git add -A
-          # ブランチに乗り換え（detached HEAD 回避）
-          git checkout -B "${{ github.ref_name }}"
-          git add -A
-          git commit -m "chore: update daily insights [skip ci]"
-           # 並行実行や手動commitとの競合を低減（クリーンな状態で実行）
-          git pull --rebase origin "${{ github.ref_name }}"
-          git push origin HEAD:"${{ github.ref }}"
+   
       - name: Upload data artifact (always)
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
