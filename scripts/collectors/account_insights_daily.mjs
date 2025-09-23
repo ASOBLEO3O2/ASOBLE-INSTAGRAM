@@ -12,7 +12,7 @@ if (!TOKEN || !IG_ID) {
 
 async function getUsername(igId, token) {
   if (process.env.IG_USERNAME) return process.env.IG_USERNAME;
-  const data = await callGraph(`${igId}?fields=username`, token);
+  const data = await callGraph(`/${igId}`, { fields: 'username' }, { token });
   if (!data.username) throw new Error('username not found');
   return data.username;
 }
@@ -22,7 +22,7 @@ async function getAccountInsights(){
   // 切り分けのため、まずは API で確実に通る 1 指標に限定
   const metrics = ['impressions'];
   // params経由ではなく、URL直書きで metric/period を確実に指定
-  const j = await callGraph(`/${IG_ID}/insights?metric=${metrics.join(',')}&period=day`, {}, { token: TOKEN });
+  const j = await callGraph(`/${IG_ID}/insights`, { metric: metrics.join(','), period: 'day' }, { token: TOKEN });
   return Array.isArray(j?.data) ? j.data : [];
 }
 
