@@ -1,0 +1,47 @@
+name: Fetch Instagram (hourly followers)
+
+on:
+  schedule:
+    - cron: "0 * * * *"  # 毎時00分（UTC）
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-hourly-followers:
+    strategy:
+      matrix:
+        env: [KITAKYUSHU, HONAMI, YUMEGAOKA, IRISO, OHTU]
+    concurrency:
+      group: fetch-hourly-followers-${{ github.ref }}-${{ matrix.env }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    environment: ${{ matrix.env }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "18" }
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-node18-${{ hashFiles('**/package-lock.json') }}
+      - name: Install
+        run: npm ci --prefer-offline --no-audit
+      - name: Run collector (followers hourly)
+        env:
+          IG_ID: ${{ secrets.IG_ID }}
+          FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
+          RUN_MODE: hourly_followers
+        run: node scripts/fetch_followers_api.mjs
+      - name: Commit & push if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: update hourly followers for ${{ matrix.env }} [skip ci]"
+            git push
+          fi
