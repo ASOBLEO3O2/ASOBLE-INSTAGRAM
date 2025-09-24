@@ -10,12 +10,12 @@ permissions:
   contents: write
 
 jobs:
-fetch-daily:
-  strategy:
-    matrix:
-      env: [KITAKYUSHU, HONAMI, YUMEGAOKA, IRISO, OHTU]
-concurrency:
-  group: fetch-daily-${{ github.ref }}-${{ matrix.env }}      
+  fetch-daily:
+    strategy:
+      matrix:
+        env: [KITAKYUSHU, HONAMI, YUMEGAOKA, IRISO, OHTU]
+    concurrency:
+      group: fetch-daily-${{ github.ref }}-${{ matrix.env }}  group: fetch-daily-${{ github.ref }}-${{ matrix.env }}      
   cancel-in-progress: true
 runs-on: ubuntu-latest
 environment: ${{ matrix.env }}
