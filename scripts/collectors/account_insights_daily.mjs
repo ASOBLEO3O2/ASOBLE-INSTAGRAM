@@ -54,14 +54,18 @@ async function getAccountInsights(){
 }
 
 function normalizeDaily(data){
-  // Graph APIの日次は配列（metricごとに values[{value, end_time}]）
-  // 当日分の latest をまとめる（欠測は含めない）
+  // Graph API の日次は 2 形態:
+  //  - values[{ value, end_time }]（例: reach）
+  //  - total_value.{ value }       （例: profile_views, accounts_engaged）
+  // どちらかに値があれば採用（欠測は含めない）
   const out = {};
   for(const m of data){
     const name = m?.name;
     const vals = Array.isArray(m?.values) ? m.values : [];
     const last = vals[vals.length-1];
-    const v = last?.value;    
+    const v = (last?.value !== undefined)
+      ? last.value
+      : (m?.total_value?.value !== undefined ? m.total_value.value : undefined);
     if (name && (v!==undefined)) out[name] = v;
   }
   return out;
