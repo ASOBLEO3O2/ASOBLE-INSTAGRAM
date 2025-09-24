@@ -41,9 +41,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # JSTの本日ファイルのみを検出（直近10分に変更）
+          # JSTの本日ファイルを検出（時間条件なし、必ず処理対象）
           today_jst=$(TZ=Asia/Tokyo date +%Y-%m-%d)
-          mapfile -t files < <(find data/account -type f -name "${today_jst}.json" -mmin -10 | sort || true)
+          mapfile -t files < <(find data/account -type f -name "${today_jst}.json" | sort || true)
           echo "[debug] today_jst=${today_jst}"
           echo "[debug] found files (${#files[@]}):"; printf ' - %s\n' "${files[@]:-<none>}"
           if [ ${#files[@]} -eq 0 ]; then
