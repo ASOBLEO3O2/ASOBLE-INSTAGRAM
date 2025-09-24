@@ -15,12 +15,12 @@ jobs:
       matrix:
         env: [KITAKYUSHU, HONAMI, YUMEGAOKA, IRISO, OHTU]
     concurrency:
-      group: fetch-daily-${{ github.ref }}-${{ matrix.env }}  group: fetch-daily-${{ github.ref }}-${{ matrix.env }}      
-  cancel-in-progress: true
-runs-on: ubuntu-latest
-environment: ${{ matrix.env }}
-timeout-minutes: 10
-    
+      group: fetch-daily-${{ github.ref }}-${{ matrix.env }} 
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    environment: ${{ matrix.env }}
+    timeout-minutes: 10
+  
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
