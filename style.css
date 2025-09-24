@@ -45,6 +45,12 @@ main { max-width:1100px; margin: 0 auto; padding: 16px; }
   display:inline-block; width:10px; height:10px; border-radius:50%;
   margin-right:6px; vertical-align:middle; border:1px solid rgba(255,255,255,.35);
 }
+
+/* === 非表示：上部の合計チャート（将来の移設に備えDOMは残置） === */
+.chart { display: none; }
+
+/* === 全店合計カードは2列ぶんに拡大 === */
+.cards .card[data-target="ALL"] { grid-column: span 2; }
 /* === 右ドロワー === */
 .drawer{
   position: fixed; top:0; right:0; height:100vh; width: 420px;
