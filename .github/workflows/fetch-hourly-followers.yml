@@ -37,35 +37,42 @@ jobs:
           RUN_MODE: hourly_followers
         run: node scripts/fetch_followers_api.mjs
 
-      - name: Duplicate to hourly path (and update latest_hourly.json)
+      - name: Duplicate to hourly path (JST) and update latest_hourly.json
         shell: bash
         run: |
           set -euo pipefail
-          today=$(date -u +%Y-%m-%d)
-          # 直近10分で更新された当日の日次JSONを物理走査で検出
-          mapfile -t files < <(find data/account -type f -name "${today}.json" -mmin -10 | sort || true)
-          echo "[debug] today=${today}"
+          # JSTの本日ファイルのみを検出（直近10分に変更）
+          today_jst=$(TZ=Asia/Tokyo date +%Y-%m-%d)
+          mapfile -t files < <(find data/account -type f -name "${today_jst}.json" -mmin -10 | sort || true)
+          echo "[debug] today_jst=${today_jst}"
           echo "[debug] found files (${#files[@]}):"; printf ' - %s\n' "${files[@]:-<none>}"
           if [ ${#files[@]} -eq 0 ]; then
-            echo "No todays daily JSON found under data/account/**. Skip hourly duplication."
+            echo "No todays (JST) daily JSON found under data/account/**. Skip hourly duplication."
             exit 0
           fi
           for f in "${files[@]}"; do
             node -e '
               const fs=require("fs"), p=process.argv[1];
               const j=JSON.parse(fs.readFileSync(p,"utf8"));
-              const acc=j.account, date=j.date;
-              if(!acc||!date){ console.error("missing account/date in", p); process.exit(0); }
-              const d = j.generated_at ? new Date(j.generated_at) : new Date();
-              const HH = String(d.getUTCHours()).padStart(2,"0");
-              const dir=`data/account/${acc}/hourly/${date}`;
-              const out=`${dir}/${HH}.json`;
+              // アカウント名は「パス」から取得して正規化
+              const m = p.match(/^data\/account\/([^/]+)\/\d{4}-\d{2}-\d{2}\.json$/);
+              if(!m){ console.error("unexpected path:", p); process.exit(0); }
+              const acc = m[1];
+              // 日付・時刻は JST で算出（generated_at があればそれを優先）
+              const z = j.generated_at ? new Date(j.generated_at) : new Date();
+              const fmt = new Intl.DateTimeFormat("ja-JP",{ timeZone:"Asia/Tokyo", hour12:false,
+                year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit" }).formatToParts(z)
+                .reduce((o,{type,value})=> (o[type]=value,o),{});
+              const dateJST = `${fmt.year}-${fmt.month}-${fmt.day}`;
+              const HHJST   = fmt.hour;
+              const dir = `data/account/${acc}/hourly/${dateJST}`;
+              const out = `${dir}/${HHJST}.json`;
               fs.mkdirSync(dir,{recursive:true});
               fs.writeFileSync(out, JSON.stringify(j,null,2));
               fs.writeFileSync(`data/account/${acc}/latest_hourly.json`, JSON.stringify(j,null,2));
-              console.log("wrote", out, "and updated latest_hourly.json");
+              console.log("wrote(JST)", out, "and updated latest_hourly.json");
             ' "$f"
-          done     
+          done  
       - name: Commit & push if changed
         run: |
           git config user.name  "github-actions[bot]"
