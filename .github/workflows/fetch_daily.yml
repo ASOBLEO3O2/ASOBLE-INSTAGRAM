@@ -10,13 +10,14 @@ permissions:
   contents: write
 
 jobs:
-  fetch-daily:
-    # 同一ブランチでの並行実行を防止
+   fetch-daily:
+    strategy:
+      matrix:
+        env: [KITAKYUSHU, HONAMI, YUMEGAOKA, IRISO, OHTU]
     concurrency:
-      group: fetch-daily-${{ github.ref }}
-      cancel-in-progress: true
-    runs-on: ubuntu-latest
-    environment: OHTU
+      group: fetch-daily-${{ github.ref }}-${{ matrix.env }}      cancel-in-progress: true
+     cancel-in-progress: true    runs-on: ubuntu-latest
+    environment: ${{ matrix.env }}
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
