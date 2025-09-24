@@ -80,14 +80,5 @@ jobs:
           git add -A data/account
           if ! git diff --cached --quiet; then
             git commit -m "chore: update hourly followers for ${{ matrix.env }} [skip ci]"
-            # push を最大3回リトライ（競合時は rebase して再試行）
-            for i in 1 2 3; do
-              if git push; then
-                echo "Push succeeded on try $i"
-                break
-              fi
-              echo "Push failed on try $i, retrying after rebase..."
-              git pull --rebase
-              sleep 2
-            done
+            git push --force-with-lease
           fi
