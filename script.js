@@ -4,7 +4,8 @@
   const $refresh = document.getElementById('refresh');
   const $chart   = document.getElementById('trend');
   const $range   = document.querySelector('.range-toggle');
- const state = { range: '1h', accounts: [], series: new Map(), overlays: new Set() }; // overlays: Set<string>
+  const $dash    = document.getElementById('dashboard');
+ const state = { range: '1h', accounts: [], series: new Map(), overlays: new Set(), target: 'ALL' };
   try{
     const res = await fetch('./accounts.json', { cache:'no-cache' });
     const data = await res.json();
@@ -40,30 +41,44 @@
       $cards.innerHTML = `<div class="card"><div class="handle">アカウント未登録</div><div class="muted">accounts.json に追記してください。</div></div>`;
       return;
     }
-    $cards.innerHTML = handles.map(h => cardHTML(h)).join('');
+    // 先頭に「全店集計カード（ALL）」を挿入
+    const htmlALL = cardHTML('ALL');
+    const htmlStores = handles.map(h => cardHTML(h)).join('');
+    $cards.innerHTML = htmlALL + htmlStores;
     // 個別ボタンにイベント付与
     $cards.querySelectorAll('[data-open]').forEach(btn=>{
       btn.addEventListener('click', () => openOne(btn.getAttribute('data-open')));
+    });
+    // カードクリックで右ドロワーを開く
+    $cards.querySelectorAll('.card[data-target]').forEach(card=>{
+      card.addEventListener('click', (e)=>{
+        // リンク/ボタンはドロワー開閉の対象外
+        if (e.target.closest('a,button')) return;
+        const h = card.getAttribute('data-target');
+        openDashboard(h);
+      });
     });
    // DOM生成直後の同期タイミングで一度実行
    try { applyCounts(); } catch {}
    }
 
-  function cardHTML(handle){
-    const url = `https://www.instagram.com/${handle}/`;
+   function cardHTML(handle){
+    const isALL = (handle==='ALL');
+    const url = isALL ? null : `https://www.instagram.com/${handle}/`;
     return `
-      <article class="card">
-        <div class="handle">@${handle}</div>
+  <article class="card" ${isALL?'data-target="ALL"':'data-target="'+handle+'"'}>
+        <div class="handle">${isALL?'全店合計':'@'+handle}</div>
         <div class="stats">
           <span class="count" data-h="${handle}">—</span>
           <span class="delta" data-h="${handle}"></span>
           <span class="updated" data-h="${handle}"></span>
         </div>
+       ${isALL ? '' : `
         <div class="links">
           <a href="${url}" target="_blank" rel="noopener">プロフィールを開く</a>
           <button data-open="${handle}" title="新規タブで開く">新規タブ</button>
         </div>
-        <div class="muted">※ Instagram は埋め込みが制限されているため外部リンクで表示します。</div>
+        <div class="muted">※ Instagram は埋め込みが制限されているため外部リンクで表示します。</div>`}
       </article>`;
   }
   function openOne(handle){
@@ -121,7 +136,8 @@
     });
   }
      
-  function applyCounts(){
+   function applyCounts(){
+    // 各店舗
     state.accounts.forEach(h=>{
       const arr = state.series.get(h)||[];
       const last = arr[arr.length-1];
@@ -159,6 +175,31 @@
         if($d) $d.textContent = '';
       }
     });
+    // 全店（ALL）
+    try{
+      const all = compose(state.range);
+      const $c = document.querySelector(`.count[data-h="ALL"]`);
+      const $u = document.querySelector(`.updated[data-h="ALL"]`);
+      const $d = document.querySelector(`.delta[data-h="ALL"]`);
+      if ($c && all.length){
+        const last = all[all.length-1];
+        const first = all[0];
+        $c.textContent = Number(last.v).toLocaleString();
+        // 最終更新（最後のポイントの時刻）
+        const d = new Date(last.t);
+        const f = new Intl.DateTimeFormat('ja-JP', {
+          timeZone: 'Asia/Tokyo', hour12: false,
+          year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit'
+        }).formatToParts(d).reduce((o,p)=> (o[p.type]=p.value, o), {});
+        if($u) $u.textContent = `${f.year}/${f.month}/${f.day} ${f.hour}:${f.minute} JST`;
+        // Δ（期間ウィンドウの最初と最後）
+        if($d){
+          const diff = (last.v - first.v);
+          $d.textContent = (diff===0 || Number.isNaN(diff)) ? '' :
+            `(${diff>0?'+':''}${diff.toLocaleString()})`;
+        }
+      }
+    }catch{}
   }
 
   function pickWindow(arr, range){
@@ -279,4 +320,45 @@
       ctx.stroke();
     });
   } 
+
+  /** === dashboard === */
+  function openDashboard(handle){
+    state.target = handle || 'ALL';
+    renderDashboard(state.target);
+    if ($dash){
+      $dash.hidden = false;
+      $dash.classList.add('is-open');
+    }
+  }
+  function renderDashboard(target){
+    if(!$dash) return;
+    // 最小実装：タイトルと主要値のみ（詳細グラフは既存 draw/compose を流用して後続拡張）
+    let title = (target==='ALL') ? '全店ダッシュボード' : `@${target} のダッシュボード`;
+    let count = '—', delta = '';
+    if(target==='ALL'){
+      const all = compose(state.range);
+      if(all.length>=1){
+        const first = all[0].v, last = all[all.length-1].v;
+        count = Number(last).toLocaleString();
+        const diff = last-first;
+        delta = (diff===0||Number.isNaN(diff))? '' : `(${diff>0?'+':''}${diff.toLocaleString()})`;
+      }
+    }else{
+      const arr = state.series.get(target)||[];
+      const win = pickWindow(arr, state.range);
+      if(win.length>=1){
+        const first = win[0].v, last = win[win.length-1].v;
+        count = Number(last).toLocaleString();
+        const diff = last-first;
+        delta = (diff===0||Number.isNaN(diff))? '' : `(${diff>0?'+':''}${diff.toLocaleString()})`;
+      }
+    }
+    $dash.innerHTML = `
+      <h2 style="margin:0 0 8px 0;font-size:18px;">${title}</h2>
+      <div style="font-size:14px;display:flex;gap:8px;align-items:baseline;">
+        <span style="font-weight:700;font-size:22px;">${count}</span>
+        <span>${delta}</span>
+      </div>
+    `;
+  }
 })();
