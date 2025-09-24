@@ -36,34 +36,36 @@ jobs:
           FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
           RUN_MODE: hourly_followers
         run: node scripts/fetch_followers_api.mjs
+
       - name: Duplicate to hourly path (and update latest_hourly.json)
         shell: bash
         run: |
           set -euo pipefail
-          # 直近の変更ファイル（収集で生成された日次ファイル）を検出
-          changed=$(git status --porcelain | awk '{print $2}' | grep -E '^data/account/.+/[0-9]{4}-[0-9]{2}-[0-9]{2}\.json$' || true)
-          if [ -z "${changed}" ]; then
-            echo "No daily JSON changes found under data/account/**. Skip hourly duplication."
+          today=$(date -u +%Y-%m-%d)
+          # 直近10分で更新された当日の日次JSONを物理走査で検出
+          mapfile -t files < <(find data/account -type f -name "${today}.json" -mmin -10 | sort || true)
+          echo "[debug] today=${today}"
+          echo "[debug] found files (${#files[@]}):"; printf ' - %s\n' "${files[@]:-<none>}"
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No todays daily JSON found under data/account/**. Skip hourly duplication."
             exit 0
           fi
-          echo "Changed daily files:" $changed
-          # 時刻は generated_at を優先。無ければ現在時刻(UTC)を使用
-          for f in $changed; do
+          for f in "${files[@]}"; do
             node -e '
               const fs=require("fs"), p=process.argv[1];
               const j=JSON.parse(fs.readFileSync(p,"utf8"));
-              const acc = j.account;
-              const date= j.date; // "YYYY-MM-DD"
+              const acc=j.account, date=j.date;
+              if(!acc||!date){ console.error("missing account/date in", p); process.exit(0); }
               const d = j.generated_at ? new Date(j.generated_at) : new Date();
-              const HH = String(d.getUTCHours()).padStart(2,"0"); // UTCで揃える（Pages表示でJST換算可）
+              const HH = String(d.getUTCHours()).padStart(2,"0");
               const dir=`data/account/${acc}/hourly/${date}`;
               const out=`${dir}/${HH}.json`;
               fs.mkdirSync(dir,{recursive:true});
-              fs.copyFileSync(p,out);
+              fs.writeFileSync(out, JSON.stringify(j,null,2));
               fs.writeFileSync(`data/account/${acc}/latest_hourly.json`, JSON.stringify(j,null,2));
               console.log("wrote", out, "and updated latest_hourly.json");
             ' "$f"
-          done      
+          done     
       - name: Commit & push if changed
         run: |
           git config user.name  "github-actions[bot]"
