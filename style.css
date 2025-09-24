@@ -9,7 +9,11 @@ button { border:0; background:var(--accent); color:#003; padding:10px 14px; bord
 button:disabled { opacity:.5; cursor:not-allowed; }
 .hint { color:var(--muted); }
 main { max-width:1100px; margin: 0 auto; padding: 16px; }
-.cards { display:grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap:14px; }
+/* カード：標準は2列、狭幅で1列 */
+.cards { display:grid; grid-template-columns: repeat(2, minmax(260px,1fr)); gap:14px; }
+@media (max-width: 1023px){
+  .cards { grid-template-columns: 1fr; }
+}
 .card { background:var(--card); border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:10px; }
 .handle { font-weight:700; font-size:18px; word-break:break-all; }
 .links { display:flex; gap:8px; flex-wrap:wrap; }
@@ -40,4 +44,16 @@ main { max-width:1100px; margin: 0 auto; padding: 16px; }
 .chip .swatch{
   display:inline-block; width:10px; height:10px; border-radius:50%;
   margin-right:6px; vertical-align:middle; border:1px solid rgba(255,255,255,.35);
+}
+/* === 右ドロワー === */
+.drawer{
+  position: fixed; top:0; right:0; height:100vh; width: 420px;
+  background: var(--card); color: var(--ink);
+  box-shadow: -8px 0 24px rgba(0,0,0,.35);
+  transform: translateX(100%); transition: transform .28s ease;
+  padding: 18px; overflow:auto; z-index: 50;
+}
+.drawer.is-open{ transform: translateX(0); }
+@media (max-width: 1279px){
+  .drawer{ width: min(100vw, 560px); }
 }
