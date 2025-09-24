@@ -96,7 +96,14 @@
         // 期待パス：data/timeseries/<handle>.json  （無ければ空配列）
         const r = await fetch(`./data/timeseries/${h}.json?t=${Date.now()}`, { cache:'no-cache' });
         if(!r.ok) throw 0;
-        const arr = await r.json();
+        // 空ファイルや壊れたJSONでも例外にせず、[] にフォールバック
+        const txt = await r.text();
+        let arr;
+        if (!txt || !txt.trim()) {
+          arr = [];
+        } else {
+          try { arr = JSON.parse(txt); } catch { arr = []; }
+        }
         // 正規化：{t, followers} のみ
        const norm = (Array.isArray(arr)?arr:[]).map(x=>({ 
           t:String(x.t||x.time||x.date), followers: Number(x.followers ?? x.count ?? x.value)
