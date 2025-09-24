@@ -91,29 +91,40 @@
 
   /** === data & chart === */
   async function loadAllSeries(handles){
+  // 安全パーサ：空/壊れ/HTMLでも [] を返す
+    const safeParseArray = (txt) => {
+      if (!txt || !txt.trim()) return [];
+      try {
+        const v = JSON.parse(txt);
+        return Array.isArray(v) ? v : [];
+      } catch {
+        return [];
+      }
+    };
     await Promise.all(handles.map(async h=>{
+      // 期待パス：data/timeseries/<handle>.json  （無ければ空配列）
+      let arr = [];
       try{
-        // 期待パス：data/timeseries/<handle>.json  （無ければ空配列）
         const r = await fetch(`./data/timeseries/${h}.json?t=${Date.now()}`, { cache:'no-cache' });
-        if(!r.ok) throw 0;
-        // 空ファイルや壊れたJSONでも例外にせず、[] にフォールバック
-        const txt = await r.text();
-        let arr;
-        if (!txt || !txt.trim()) {
-          arr = [];
+        if(!r.ok){
+          console.warn('timeseries missing (HTTP):', h, r.status);
         } else {
-          try { arr = JSON.parse(txt); } catch { arr = []; }
+          const txt = await r.text();          // ← 常に text で取得
+          arr = safeParseArray(txt);           // ← ここで例外を吸収
+          if (arr.length === 0) {
+            console.warn('timeseries unreadable or empty:', h);
+          }
         }
-        // 正規化：{t, followers} のみ
-       const norm = (Array.isArray(arr)?arr:[]).map(x=>({ 
-          t:String(x.t||x.time||x.date), followers: Number(x.followers ?? x.count ?? x.value)
-        })).filter(x=>x.t && !Number.isNaN(x.followers));
-       state.series.set(h, norm);
-      }catch(e){
-         console.warn('timeseries missing or unreadable:', h, e);
-         state.series.set(h, []);
-       }
-     }));
+      }catch{
+        console.warn('timeseries fetch failed:', h);
+      }
+      // 正規化：{t, followers} のみ
+      const norm = arr.map(x=>({ 
+        t:String(x?.t ?? x?.time ?? x?.date ?? ''), 
+        followers: Number(x?.followers ?? x?.count ?? x?.value)
+      })).filter(x=>x.t && !Number.isNaN(x.followers));
+      state.series.set(h, norm);
+    }));
     // series 構築直後に実行（初回 DOM 未生成でも後でまた呼ぶのでOK）
     try { applyCounts(); } catch {}
    renderChips(handles);
