@@ -10,6 +10,12 @@ if (!TOKEN || !IG_ID) {
   process.exit(1);
 }
 
+async function getFollowers(igId, token) {
+  const data = await callGraph(`/${igId}`, { fields: 'followers_count' }, { token });
+  const n = Number(data?.followers_count);
+  return Number.isFinite(n) ? n : null;
+}
+
 async function getUsername(igId, token) {
   if (process.env.IG_USERNAME) return process.env.IG_USERNAME;
   const data = await callGraph(`/${igId}`, { fields: 'username' }, { token });
@@ -74,6 +80,8 @@ function normalizeDaily(data){
 async function main(){
   const username = await getUsername(IG_ID, TOKEN);
   const daily = normalizeDaily(await getAccountInsights());
+  const followers = await getFollowers(IG_ID, TOKEN);
+  if (Number.isFinite(followers)) daily.followers_count = followers;
   const date = ymdJST();
   const payload = { date, generated_at: isoJST(), account: username, source:'ig_graph_v23.0', metrics: daily };
 
