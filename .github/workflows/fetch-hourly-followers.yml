@@ -73,12 +73,29 @@ jobs:
               console.log("wrote(JST)", out, "and updated latest_hourly.json");
             ' "$f"
           done  
+          
       - name: Commit & push if changed
         run: |
+          set -euo pipefail
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A data/account
           if ! git diff --cached --quiet; then
-            git commit -m "chore: update hourly followers for ${{ matrix.env }} [skip ci]"
-            git push --force-with-lease
+            git commit -m "chore: update hourly followers for ${{ matrix.env }} [skip ci]"            # 並列push競合に備え、stash→rebase→pop→再add→push を最大3回
+            for i in 1 2 3; do
+              if git push; then
+                echo "Push succeeded on try $i"
+                break
+              fi
+              echo "Push failed on try $i; stashing and rebasing..."
+              git stash push -u -m "auto-stash-$i" || true
+              git pull --rebase
+              git stash pop || true
+              git add -A data/account
+              # 競合解消が発生した場合のみ再コミット
+              if ! git diff --cached --quiet; then
+                git commit -m "chore: update hourly followers for ${{ matrix.env }} [skip ci]"
+              fi
+              sleep 2
+            done
           fi
