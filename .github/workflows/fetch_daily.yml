@@ -101,10 +101,21 @@ jobs:
           git switch -C "$BRANCH"
           git add -A
           git commit -m "chore: update daily insights [skip ci]"
-          # 並行実行や手動commitとの競合を低減（クリーンな状態で実行）
-          git pull --rebase origin "$BRANCH"
-          git push origin HEAD:"$GITHUB_REF"
-   
+          # 並行実行（マトリクス）での push 競合を回避：pull --rebase → push をリトライ
+          tries=0
+          while :; do
+            tries=$((tries+1))
+            # 最新を取り込んで自分のコミットを先頭へ
+            git pull --rebase origin "$BRANCH" || true
+            # push（成功なら抜ける）
+            if git push origin HEAD:"$BRANCH"; then
+              echo "Pushed successfully on try #$tries"
+              break
+            fi
+            # 5回まで指数的に待って再試行
+            test $tries -ge 5 && { echo "Push failed after $tries retries" >&2; exit 1; }
+            sleep $(( tries * 3 ))
+          done   
       - name: Upload data artifact (always)
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
