@@ -89,9 +89,10 @@ jobs:
           if-no-files-found: ignore
           # 生成し得るパスをまとめてアップロード
           path: |
-            data/account/*/hourly/**
-            data/account/*/latest_hourly.json
-
+           data/account/*/${{ env.today_jst }}.json
+           data/account/*/hourly/**
+           data/account/*/latest_hourly.json
+   
    push-all:
     runs-on: ubuntu-latest
     needs: fetch-hourly-followers
