@@ -31,7 +31,9 @@ jobs:
           path: ~/.npm
           key: npm-${{ runner.os }}-node18-${{ hashFiles('**/package-lock.json') }}
       - name: Install
-        run: npm install --prefer-offline --no-audit
+        run: |
+          npm config set package-lock false
+          npm install --prefer-offline --no-audit
       - name: Run collector (followers hourly)
         env:
           IG_ID: ${{ secrets.IG_ID }}
@@ -78,22 +80,13 @@ jobs:
           
       - name: Commit & push if changed
         run: |
-           git config user.name  "github-actions[bot]"
-           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-           git add -A data/account
-           if ! git diff --cached --quiet; then
-            git commit -m "chore: update hourly followers for ${{ matrix.env }} [skip ci]"
-            git push
-           fi
-              echo "Push failed on try $i; stashing and rebasing..."
-              git stash push -u -m "auto-stash-$i" || true
-              git pull --rebase
-              git stash pop || true
-              git add -A data/account
-              # 競合解消が発生した場合のみ再コミット
-              if ! git diff --cached --quiet; then
-                git commit -m "chore: update hourly followers for ${{ matrix.env }} [skip ci]"
-              fi
-              sleep 2
-            done
-            fi
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A data/account
+          if git diff --cached --quiet; then
+            echo "no staged changes; skip commit"
+            exit 0
+          fi
+          git commit -m "chore: update hourly followers for ${{ matrix.env }} [skip ci]"
+          git push
