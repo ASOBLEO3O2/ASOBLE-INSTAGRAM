@@ -82,6 +82,13 @@ jobs:
               console.log("hourly written:", out);
             })().catch(e => { console.error(e); process.exit(1); });
           '
+      - name: Debug (after generation, before upload)
+        run: |
+          echo "[debug] files after generation for ${{ matrix.env }}:"
+          ls -R data/account || true
+          echo "[debug] sample json:"
+          head -n 20 data/account/*/*.json || true
+          
       - name: Upload hourly artifacts (per store)
         uses: actions/upload-artifact@v4
         with:
@@ -105,7 +112,15 @@ jobs:
         with:
           merge-multiple: true
           path: .
-      - name: Commit & single push
+
+      - name: Debug (after download, before commit)
+        run: |
+          echo "[debug] files after artifact download:"
+          ls -R data/account || true
+          echo "[debug] git status before add:"
+          git status --porcelain || true
+
+      - name: Commit & single push      
         run: |
           set -euo pipefail
           git config user.name  "github-actions[bot]"
