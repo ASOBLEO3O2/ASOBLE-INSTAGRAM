@@ -41,42 +41,47 @@ jobs:
           RUN_MODE: hourly_followers
         run: node scripts/fetch_followers_api.mjs
 
-      - name: Duplicate to hourly path (JST) and update latest_hourly.json
-        shell: bash
+      - name: Fetch latest followers via Graph API and write hourly (JST)
+        env:
+          IG_ID: ${{ secrets.IG_ID }}
+          FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
         run: |
-          set -euo pipefail
-          # JSTの本日ファイルを検出（時間条件なし、必ず処理対象）
-          today_jst=$(TZ=Asia/Tokyo date +%Y-%m-%d)
-          mapfile -t files < <(find data/account -type f -name "${today_jst}.json" | sort || true)
-          echo "[debug] today_jst=${today_jst}"
-          echo "[debug] found files (${#files[@]}):"; printf ' - %s\n' "${files[@]:-<none>}"
-          if [ ${#files[@]} -eq 0 ]; then
-            echo "No todays (JST) daily JSON found under data/account/**. Skip hourly duplication."
-            exit 0
-          fi
-          for f in "${files[@]}"; do
-            node -e '
-              const fs=require("fs"), p=process.argv[1];
-              const j=JSON.parse(fs.readFileSync(p,"utf8"));
-              // アカウント名は「パス」から取得して正規化
-              const m = p.match(/^data\/account\/([^/]+)\/\d{4}-\d{2}-\d{2}\.json$/);
-              if(!m){ console.error("unexpected path:", p); process.exit(0); }
-              const acc = m[1];
-              // 日付・時刻は JST で算出（generated_at があればそれを優先）
-              const z = j.generated_at ? new Date(j.generated_at) : new Date();
-              const fmt = new Intl.DateTimeFormat("ja-JP",{ timeZone:"Asia/Tokyo", hour12:false,
-                year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit" }).formatToParts(z)
-                .reduce((o,{type,value})=> (o[type]=value,o),{});
+          node -e '
+            const fs = require("fs");
+            const fetch = global.fetch;
+            (async () => {
+              const igId = process.env.IG_ID;
+              const token = process.env.FB_PAGE_TOKEN;
+              const url = `https://graph.facebook.com/v23.0/${igId}?fields=username,followers_count&access_token=${token}`;
+              const res = await fetch(url);
+              if (!res.ok) {
+                const t = await res.text();
+                console.error("Graph API error:", res.status, t);
+                process.exit(1);
+              }
+              const body = await res.json();
+              const now = new Date();
+              const fmt = new Intl.DateTimeFormat("ja-JP", { timeZone:"Asia/Tokyo", hour12:false,
+                year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit" }).formatToParts(now)
+                .reduce((o,{type,value}) => (o[type]=value,o), {});
               const dateJST = `${fmt.year}-${fmt.month}-${fmt.day}`;
-              const HHJST   = fmt.hour;
-              const dir = `data/account/${acc}/hourly/${dateJST}`;
-              const out = `${dir}/${HHJST}.json`;
-              fs.mkdirSync(dir,{recursive:true});
-              fs.writeFileSync(out, JSON.stringify(j,null,2));
-              fs.writeFileSync(`data/account/${acc}/latest_hourly.json`, JSON.stringify(j,null,2));
-              console.log("wrote(JST)", out, "and updated latest_hourly.json");
-            ' "$f"
-          done  
+              const hourJST = fmt.hour;
+              const account = body.username;
+              const data = {
+                date: dateJST,
+                generated_at: new Date(now.getTime()+9*60*60*1000).toISOString().replace("Z","+09:00"),
+                account,
+                source: "ig_graph_v23.0",
+                metrics: { followers_count: body.followers_count }
+              };
+              const dir = `data/account/${account}/hourly/${dateJST}`;
+              const out = `${dir}/${hourJST}.json`;
+              fs.mkdirSync(dir, { recursive: true });
+              fs.writeFileSync(out, JSON.stringify(data, null, 2));
+              fs.writeFileSync(`data/account/${account}/latest_hourly.json`, JSON.stringify(data, null, 2));
+              console.log("hourly written:", out);
+            })().catch(e => { console.error(e); process.exit(1); });
+          '
           
       - name: Commit & push if changed
         run: |
