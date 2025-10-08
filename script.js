@@ -73,8 +73,9 @@
           <span class="delta" data-h="${handle}"></span>
           <span class="updated" data-h="${handle}"></span>
         </div>
+        <canvas class="sparkline" data-h="${handle}" width="240" height="36"></canvas>
        ${isALL ? '' : `
-        <div class="links">
+             <div class="links">
           <a href="${url}" target="_blank" rel="noopener">プロフィールを開く</a>
           <button data-open="${handle}" title="新規タブで開く">新規タブ</button>
         </div>
@@ -192,6 +193,9 @@
         $u.textContent = '';
         if($d) $d.textContent = '';
       }
+     // スパークライン描画
+      const $sp = document.querySelector(`.sparkline[data-h="${h}"]`);
+      if($sp) drawSparkline($sp, arr);      
     });
     // 全店（ALL）
     try{
@@ -218,6 +222,52 @@
         }
       }
     }catch{}
+
+    // 数値クリックで短縮/通常切替
+    document.querySelectorAll('.count').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        const txt = el.textContent.replace(/[(),]/g,'');
+        const num = Number(txt);
+        if(Number.isNaN(num)) return;
+        if(el.dataset.mode==='short'){
+          el.textContent = num.toLocaleString();
+          el.dataset.mode='full';
+        }else{
+          el.textContent = shorten(num);
+          el.dataset.mode='short';
+        }
+      });
+    });
+   }
+
+  // --- helper: shorten number (e.g., 1200 → 1.2k) ---
+  function shorten(n){
+    if(n>=1e9) return (n/1e9).toFixed(1).replace(/\.0$/,'')+'B';
+    if(n>=1e6) return (n/1e6).toFixed(1).replace(/\.0$/,'')+'M';
+    if(n>=1e3) return (n/1e3).toFixed(1).replace(/\.0$/,'')+'k';
+    return n.toLocaleString();
+  }
+
+  // --- sparkline ---
+  function drawSparkline(canvas, arr){
+    if(!canvas || !arr?.length) return;
+    const ctx = canvas.getContext('2d');
+    const W=canvas.width, H=canvas.height;
+    ctx.clearRect(0,0,W,H);
+    const rows = arr.map(x=>({t:new Date(x.t).getTime(),v:x.followers}))
+                    .filter(x=>Number.isFinite(x.t));
+    if(rows.length<2) return;
+    const xs=rows.map(x=>x.t), ys=rows.map(x=>x.v);
+    const xmin=Math.min(...xs), xmax=Math.max(...xs);
+    const ymin=Math.min(...ys), ymax=Math.max(...ys);
+    const x=t=> (t-xmin)/(xmax-xmin)*W;
+    const y=v=> H-( (v-ymin)/(ymax-ymin)*H );
+    ctx.beginPath();
+    rows.forEach((p,i)=> i?ctx.lineTo(x(p.t),y(p.v)):ctx.moveTo(x(p.t),y(p.v)));
+    ctx.strokeStyle='#6ad1e3';
+    ctx.lineWidth=1.5;
+    ctx.globalAlpha=0.8;
+    ctx.stroke();
   }
 
   function pickWindow(arr, range){
