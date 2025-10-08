@@ -437,24 +437,13 @@
     let title = (target==='ALL') ? '全店ダッシュボード' : `@${target} のダッシュボード`;
     let count = '—', delta = '';
     if (target === 'ALL') {
-      // === 修正版: 各店ウィンドウを合算（applyCountsと同方式） ===
-      const acc = state.accounts.reduce((sum, h) => {
-        const arr = state.series.get(h) || [];
-        const win = pickWindow(arr, state.range);
-        if (Array.isArray(win) && win.length) {
-          sum.first += Number(win[0].v) || 0;
-          sum.last  += Number(win[win.length - 1].v) || 0;
-        }
-        return sum;
-      }, { first: 0, last: 0 });
-
-      count = Number(acc.last).toLocaleString();
-      const diff = acc.last - acc.first;
-      delta = (diff === 0 || Number.isNaN(diff))
-        ? ''
-        : `(${diff > 0 ? '+' : ''}${diff.toLocaleString()})`;
+      // === ダッシュボードはカードの値をそのまま再利用 ===
+      const $count = document.querySelector('.count[data-h="ALL"]');
+      const $delta = document.querySelector('.delta[data-h="ALL"]');
+      if ($count) count = $count.textContent;
+      if ($delta) delta = $delta.textContent;
     } else {
-      const arr = state.series.get(target)||[];
+       const arr = state.series.get(target)||[];
       const win = pickWindow(arr, state.range);
       if(win.length>=1){
         const first = win[0].v, last = win[win.length-1].v;
