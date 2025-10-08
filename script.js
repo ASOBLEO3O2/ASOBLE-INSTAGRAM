@@ -436,15 +436,24 @@
     // 最小実装：タイトルと主要値のみ（詳細グラフは既存 draw/compose を流用して後続拡張）
     let title = (target==='ALL') ? '全店ダッシュボード' : `@${target} のダッシュボード`;
     let count = '—', delta = '';
-    if(target==='ALL'){
-      const all = compose(state.range);
-      if(all.length>=1){
-        const first = all[0].v, last = all[all.length-1].v;
-        count = Number(last).toLocaleString();
-        const diff = last-first;
-        delta = (diff===0||Number.isNaN(diff))? '' : `(${diff>0?'+':''}${diff.toLocaleString()})`;
-      }
-    }else{
+    if (target === 'ALL') {
+      // === 修正版: 各店ウィンドウを合算（applyCountsと同方式） ===
+      const acc = state.accounts.reduce((sum, h) => {
+        const arr = state.series.get(h) || [];
+        const win = pickWindow(arr, state.range);
+        if (Array.isArray(win) && win.length) {
+          sum.first += Number(win[0].v) || 0;
+          sum.last  += Number(win[win.length - 1].v) || 0;
+        }
+        return sum;
+      }, { first: 0, last: 0 });
+
+      count = Number(acc.last).toLocaleString();
+      const diff = acc.last - acc.first;
+      delta = (diff === 0 || Number.isNaN(diff))
+        ? ''
+        : `(${diff > 0 ? '+' : ''}${diff.toLocaleString()})`;
+    } else {
       const arr = state.series.get(target)||[];
       const win = pickWindow(arr, state.range);
       if(win.length>=1){
