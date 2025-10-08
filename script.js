@@ -73,8 +73,8 @@
           <span class="delta" data-h="${handle}"></span>
           <span class="updated" data-h="${handle}"></span>
         </div>
-        <canvas class="sparkline" data-h="${handle}" width="240" height="36"></canvas>
-       ${isALL ? '' : `
+        <canvas class="sparkline" data-h="${handle}" width="320" height="${isALL?48:36}"></canvas>     
+             ${isALL ? '' : `
              <div class="links">
           <a href="${url}" target="_blank" rel="noopener">プロフィールを開く</a>
           <button data-open="${handle}" title="新規タブで開く">新規タブ</button>
@@ -220,6 +220,11 @@
           $d.textContent = (diff===0 || Number.isNaN(diff)) ? '' :
             `(${diff>0?'+':''}${diff.toLocaleString()})`;
         }
+        // スパークライン描画
+        const $spAll = document.querySelector('.sparkline[data-h="ALL"]');
+        if($spAll) drawSparkline($spAll, all.map(x=>({t:new Date(x.t).toISOString(), followers:x.v})));
+       }
+        
       }
     }catch{}
 
