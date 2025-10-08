@@ -54,4 +54,6 @@ jobs:
             exit 0
           fi
           git commit -m "chore: hourly followers → data/timeseries (${{ matrix.env }}) [skip ci]"
+          # ---- rebase & push (avoid race condition between matrix jobs) ----
+          git pull --rebase origin main || true
           git push
