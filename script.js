@@ -197,44 +197,58 @@
       const $sp = document.querySelector(`.sparkline[data-h="${h}"]`);
       if($sp) drawSparkline($sp, arr);      
     });
-    // 全店（ALL）
-    try{
-      const all = compose(state.range);
+    // 全店（ALL）: 表示用スナップショットは「各店ウィンドウを個別に合算」
+    try {
       const $c = document.querySelector(`.count[data-h="ALL"]`);
       const $u = document.querySelector(`.updated[data-h="ALL"]`);
       const $d = document.querySelector(`.delta[data-h="ALL"]`);
-      if ($c && all.length){
-        const last = all[all.length-1];
-        const first = all[0];
-        $c.textContent = Number(last.v).toLocaleString();
-        // 最終更新（最後のポイントの時刻）
-        const d = new Date(last.t);
-        const f = new Intl.DateTimeFormat('ja-JP', {
-          timeZone: 'Asia/Tokyo', hour12: false,
-          year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit'
-        }).formatToParts(d).reduce((o,p)=> (o[p.type]=p.value, o), {});
-        if($u) $u.textContent = `${f.year}/${f.month}/${f.day} ${f.hour}:${f.minute} JST`;
-        // Δ（期間ウィンドウの最初と最後）
-        if($d){
-          const diff = (last.v - first.v);
+      if ($c) {
+        const acc = state.accounts.reduce((sum, h) => {
+          const arr = state.series.get(h) || [];
+          const win = pickWindow(arr, state.range);
+          if (Array.isArray(win) && win.length) {
+            const first = win[0];
+            const last  = win[win.length - 1];
+            sum.first   += Number(first.v) || 0;
+            sum.last    += Number(last.v)  || 0;
+            sum.tLatest  = Math.max(sum.tLatest, Number(last.t) || 0);
+          }
+          return sum;
+        }, { first: 0, last: 0, tLatest: 0 });
+
+        // 現在値
+        $c.textContent = Number(acc.last).toLocaleString();
+        // 最終更新（各店の最後の時刻の最大）
+        if ($u && acc.tLatest > 0) {
+          const d = new Date(acc.tLatest);
+          const f = new Intl.DateTimeFormat('ja-JP', {
+            timeZone: 'Asia/Tokyo', hour12: false,
+            year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit'
+          }).formatToParts(d).reduce((o,p)=> (o[p.type]=p.value, o), {});
+          $u.textContent = `${f.year}/${f.month}/${f.day} ${f.hour}:${f.minute} JST`;
+        }
+        // Δ（期間ウィンドウの最初と最後の合算）
+        if ($d) {
+          const diff = acc.last - acc.first;
           $d.textContent = (diff===0 || Number.isNaN(diff)) ? '' :
             `(${diff>0?'+':''}${diff.toLocaleString()})`;
         }
-        // スパークライン描画
-        const $spAll = document.querySelector('.sparkline[data-h="ALL"]');
-        if ($spAll) {
-          const arrForSpark = all.map(x => ({
-            t: new Date(x.t).toISOString(),
-            followers: x.v
-          }));
-          drawSparkline($spAll, arrForSpark);
-        }
+      }
+      // スパークラインは従来どおり compose() で合成線を描画（表示目的）
+      const allForSpark = compose(state.range);
+      const $spAll = document.querySelector('.sparkline[data-h="ALL"]');
+      if ($spAll && allForSpark.length) {
+        const arrForSpark = allForSpark.map(x => ({
+          t: new Date(x.t).toISOString(),
+          followers: x.v
+        }));
+        drawSparkline($spAll, arrForSpark);
       }
     } catch (err) {
       console.warn('applyCounts(ALL) failed:', err);
-    }  
+    }
 
-    // 数値クリックで短縮/通常切替
+     // 数値クリックで短縮/通常切替
     document.querySelectorAll('.count').forEach(el=>{
       el.addEventListener('click', ()=>{
         const txt = el.textContent.replace(/[(),]/g,'');
