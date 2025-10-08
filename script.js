@@ -321,19 +321,27 @@
   }
 
   function compose(range){
-    // 全アカウントを重ねず、まずは「合計」を描く（必要なら個別オーバーレイは後段で追加）
-    const merged = [];
+    // === 改良版: 時間単位で丸めて合計 ===
+    const bucket = new Map(); // key: floor(t / interval)
+    const arrAll = [];
+    const now = Date.now();
+    const rangeKey = range || '1h';
+    const interval = (rangeKey==='1h') ? 60*60e3 :
+                     (rangeKey==='1d') ? 3600e3 :
+                     86400e3; // 1m → 日単位
+
     state.accounts.forEach(h=>{
-      const arr = state.series.get(h)||[];
-      pickWindow(arr, range).forEach(p=>{
-        const key = p.t;
-        const i = merged.findIndex(x=>x.t===key);
-        if(i>=0) merged[i].v += p.v; else merged.push({ t:key, v:p.v });
+      const series = state.series.get(h) || [];
+      pickWindow(series, rangeKey).forEach(p=>{
+        const key = Math.floor(p.t / interval) * interval;
+        bucket.set(key, (bucket.get(key) ?? 0) + p.v);
       });
     });
-    merged.sort((a,b)=>a.t-b.t);
-    return merged;
-  }
+
+    bucket.forEach((v,t)=> arrAll.push({ t, v }));
+    arrAll.sort((a,b)=>a.t-b.t);
+    return arrAll;
+   }
 
   function draw(){
     const ctx = $chart?.getContext?.('2d');
