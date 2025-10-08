@@ -35,6 +35,42 @@ main { max-width:1100px; margin: 0 auto; padding: 16px; }
 .stats .count { font-weight:700; }
 .stats .updated { color:var(--muted); font-size:11px; }
 
+/* 改良: フォロワー数を大きく表示＋トグル対応 */
+.stats .count {
+  font-size: 30px;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: transform .3s ease, opacity .3s ease;
+}
+.stats .count.updated {
+  transform: scale(1.12);
+  opacity: 0.8;
+}
+.stats .delta {
+  background: #14508f;
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* 全店カードは固定 */
+.cards .card[data-target="ALL"] {
+  grid-column: span 2;
+  position: sticky;
+  top: 8px;
+  z-index: 10;
+}
+
+/* 小型スパークライン */
+.sparkline {
+  width: 100%;
+  height: 36px;
+  display: block;
+}
+
+
 /* === chips (overlay toggle) === */
 .chips { display:flex; flex-wrap:wrap; gap:6px; margin:6px 0; }
 .chip { background:#234; color:#fff; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:12px; }
