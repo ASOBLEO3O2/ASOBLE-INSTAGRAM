@@ -1,5 +1,3 @@
-*** Begin Patch
-*** Add File: .github/workflows/extract-hourly-followers.yml
 name: Extract hourly followers from daily snapshots
 
 on:
@@ -32,4 +30,3 @@ jobs:
           fi
           git commit -m "chore: hourly followers (extracted from daily) [skip ci]"
           git push
-*** End Patch
