@@ -222,11 +222,17 @@
         }
         // スパークライン描画
         const $spAll = document.querySelector('.sparkline[data-h="ALL"]');
-        if($spAll) drawSparkline($spAll, all.map(x=>({t:new Date(x.t).toISOString(), followers:x.v})));
-       }
-        
+        if ($spAll) {
+          const arrForSpark = all.map(x => ({
+            t: new Date(x.t).toISOString(),
+            followers: x.v
+          }));
+          drawSparkline($spAll, arrForSpark);
+        }
       }
-    }catch{}
+    } catch (err) {
+      console.warn('applyCounts(ALL) failed:', err);
+    }  
 
     // 数値クリックで短縮/通常切替
     document.querySelectorAll('.count').forEach(el=>{
