@@ -1,0 +1,35 @@
+*** Begin Patch
+*** Add File: .github/workflows/extract-hourly-followers.yml
+name: Extract hourly followers from daily snapshots
+
+on:
+  schedule:
+    - cron: "5 * * * *"  # 毎時05分（UTC）。必要に応じて調整
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+      - name: Run extractor
+        run: node scripts/extract_followers_from_daily.mjs
+      - name: Commit & push if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A data/derived/followers_hourly
+          if git diff --cached --quiet; then
+            echo "no hourly followers changes"
+            exit 0
+          fi
+          git commit -m "chore: hourly followers (extracted from daily) [skip ci]"
+          git push
+*** End Patch
