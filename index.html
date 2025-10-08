@@ -27,7 +27,8 @@
       <canvas id="trend" width="1024" height="260"></canvas>
       <div id="chips" class="chips"></div>
     </section>
-    <section id="cards" class="cards" aria-live="polite"></section>
+    <!-- 全店合計カードは固定表示 -->
+    <section id="cards" class="cards" aria-live="polite" style="position:relative;"></section>    
   </main>
   <!-- 右ドロワー（カード選択時に詳細を表示） -->
   <aside id="dashboard" class="drawer" hidden aria-live="polite"></aside>
@@ -36,6 +37,8 @@
   </footer>
    <!-- cache-bust: 強制的に最新版の script.js を読ませる -->
   <script src="./script.js?v=3" defer></script>
+  <!-- 改良版UI -->
+  <script src="./script.js?v=4" defer></script>
   <noscript>JavaScript を有効にしてください。</noscript>
 </body>
 </html>
