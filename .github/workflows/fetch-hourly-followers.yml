@@ -13,8 +13,18 @@ jobs:
     strategy:
       max-parallel: 1
       matrix:
-        env: [KITAKYUSHU, HONAMI, YUMEGAOKA, IRISO, OHTU]
-
+        include:
+          - env: KITAKYUSHU
+            HANDLE: asoble_kitakyushu
+          - env: HONAMI
+            HANDLE: asoble_honami
+          - env: YUMEGAOKA
+            HANDLE: asoble_yumegaoka
+          - env: IRISO
+            HANDLE: kininal_asoble_iriso
+          - env: OHTU
+            HANDLE: asoble_ohtsu   # ← 正式表記に合わせてください（例：ohmeotsu → ohtsu）
+    
     concurrency:
       group: fetch-hourly-followers-${{ github.ref }}-${{ matrix.env }}
       cancel-in-progress: true
@@ -39,6 +49,7 @@ jobs:
           IG_ID: ${{ secrets.IG_ID }}
           FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
           RUN_MODE: hourly_followers
+          HANDLE: ${{ matrix.HANDLE }}
         run: node scripts/fetch_followers_api.mjs
  
       # ↑ 収集のみ。account系の書き出し・artifactは削除してシンプル化。
