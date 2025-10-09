@@ -238,7 +238,7 @@
         if ($d) {
           const diff = acc.last - acc.first;
           $d.textContent = (diff===0 || Number.isNaN(diff)) ? '' :
-            `(${diff>0?'+':''}${diff.toLocaleString()})`;
+       　   `(${diff>0?'+':''}${diff.toLocaleString()} / ${RANGE_LABEL[state.range] || state.range})`;
         }
       }
       // スパークラインは従来どおり compose() で合成線を描画（表示目的）
