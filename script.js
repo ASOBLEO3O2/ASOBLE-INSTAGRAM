@@ -509,12 +509,66 @@
         delta = (diff===0||Number.isNaN(diff))? '' : `(${diff>0?'+':''}${diff.toLocaleString()})`;
       }
     }
+    // === ランキング用データ作成（現在のレンジに連動） ===
+    const records = state.accounts.map(h=>{
+      const arr = state.series.get(h)||[];
+      const win = pickWindow(arr, state.range);
+      let diff = NaN;
+      if (Array.isArray(win) && win.length >= 2) {
+        diff = (win[win.length-1].v) - (win[0].v);
+      } else if (state.range === '1h') {
+        // 1時間だけは“見える化”優先で0にフォールバック
+        diff = 0;
+      }
+      return { h, diff: Number(diff) };
+    }).filter(x=>Number.isFinite(x.diff));
+    // 上位3／下位3
+    const top3  = [...records].sort((a,b)=>b.diff-a.diff).slice(0,3);
+    const worst3= [...records].sort((a,b)=>a.diff-b.diff).slice(0,3);
+
+    // === ダッシュボード描画 ===
     $dash.innerHTML = `
       <h2 style="margin:0 0 8px 0;font-size:18px;">${title}</h2>
-      <div style="font-size:14px;display:flex;gap:8px;align-items:baseline;">
+      <div style="font-size:14px;display:flex;gap:8px;align-items:baseline;margin-bottom:8px;">
         <span style="font-weight:700;font-size:22px;">${count}</span>
         <span>${delta}</span>
       </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <div style="font-weight:600;margin-bottom:4px;">増加 上位3</div>
+          <ol style="margin:0;padding-left:18px;">
+            ${top3.map(x=>`<li class="rank-item" data-h="${x.h}" style="cursor:pointer;line-height:1.6;">
+              <span style="display:inline-block;min-width:7em;">@${x.h}</span>
+              <strong>${x.diff>0?'+':''}${x.diff.toLocaleString()}</strong>
+            </li>`).join('')}
+          </ol>
+        </div>
+        <div>
+          <div style="font-weight:600;margin-bottom:4px;">減少 下位3</div>
+          <ol style="margin:0;padding-left:18px;">
+            ${worst3.map(x=>`<li class="rank-item" data-h="${x.h}" style="cursor:pointer;line-height:1.6;">
+              <span style="display:inline-block;min-width:7em;">@${x.h}</span>
+              <strong>${x.diff>0?'+':''}${x.diff.toLocaleString()}</strong>
+            </li>`).join('')}
+          </ol>
+        </div>
+      </div>
+      <div style="margin-top:8px;font-size:12px;color:#789;">
+        ※ 行をクリックすると、その店舗の線をメインチャートにオーバーレイ表示します。
+      </div>
     `;
+    // クリックでオーバーレイ線のトグル
+    $dash.querySelectorAll('.rank-item').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        const h = el.getAttribute('data-h');
+        if (!h) return;
+        if (state.overlays.has(h)) state.overlays.delete(h); else state.overlays.add(h);
+        // chipsの見た目も同期
+        const active = state.overlays.has(h);
+        document.querySelectorAll(\`.chip[data-h="\${h}"]\`).forEach(c=>c.classList.toggle('active', active));
+        draw();
+      });
+    });
+   `;
   }
 })();
