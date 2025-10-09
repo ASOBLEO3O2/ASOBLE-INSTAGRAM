@@ -430,6 +430,36 @@
       ctx.beginPath(); ctx.moveTo(L,yy); ctx.lineTo(W-R,yy); ctx.stroke();
     }
     ctx.globalAlpha = 1;
+   // bars (diff layer): 隣接差分を棒で可視化（専用スケール）
+    if (data.length >= 2) {
+      // 隣接差分系列 [{t, d}]
+      const diffs = [];
+      for (let i = 1; i < data.length; i++) {
+        diffs.push({ t: data[i].t, d: data[i].v - data[i - 1].v });
+      }
+      const dvals = diffs.map(o => o.d);
+      const dmin = Math.min(...dvals);
+      const dmax = Math.max(...dvals);
+      // ゼロ基線を必ず含むスケール
+      const ymin2 = Math.min(0, dmin), ymax2 = Math.max(0, dmax);
+      const y2 = v => T + (H - T - B) * (1 - ((v - ymin2) / Math.max(1, (ymax2 - ymin2))));
+      const y0 = y2(0);
+      // 棒の幅（点数に応じて自動調整）
+      const colW = Math.max(1, ((W - L - R) / Math.max(2, diffs.length)) * 0.6);
+      ctx.save();
+      ctx.globalAlpha = 0.35;
+      diffs.forEach(pt => {
+        const cx = x(pt.t); // 中心X（総数と同一の時間座標）
+        const yy = y2(pt.d);
+        const top = Math.min(y0, yy);
+        const h   = Math.abs(y0 - yy);
+        // 正: 青緑系 / 負: ピンク系（判別しやすい色）
+        ctx.fillStyle = (pt.d >= 0) ? '#8ad1a3' : '#f28d8d';
+        ctx.fillRect(cx - colW / 2, top, colW, Math.max(1, h));
+      });
+      ctx.restore();
+    }
+
     // line
     ctx.beginPath();
     data.forEach((p,i)=>{ i?ctx.lineTo(x(p.t), y(p.v)) : ctx.moveTo(x(p.t), y(p.v)); });
