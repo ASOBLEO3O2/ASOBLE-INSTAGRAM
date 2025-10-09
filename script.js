@@ -28,7 +28,8 @@
       if(!btn) return;
       state.range = btn.dataset.range;
       $range.querySelectorAll('.rt-btn').forEach(b=>b.classList.toggle('is-active', b===btn));
-      draw();
+      try { applyCounts(); } catch {}
+      draw();    
     });
   // ※ refresh は上で1回だけバインド（重複回避）
     
