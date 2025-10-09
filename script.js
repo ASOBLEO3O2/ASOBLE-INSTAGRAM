@@ -183,15 +183,30 @@
          // Δ（選択レンジの増減）：欠測は0化せず、ウィンドウ内の最初と最後のみで算出
         try {
           const win = pickWindow(arr, state.range);
+          let diff = NaN;
+          // 通常：ウィンドウ内の最初と最後
+          if (Array.isArray(win) && win.length >= 2) {
+            diff = (win[win.length - 1].v) - (win[0].v);
+          } else if (state.range === '1h') {
+            // 1時間だけは「直近6時間以内の2点」をフォールバック
+            const now = Date.now();
+            const cut = now - 6*3600e3;
+            const recent = arr.map(x=>({ t:new Date(x.t).getTime(), v:x.followers }))
+                              .filter(x=>Number.isFinite(x.t) && x.t<=now && x.t>=cut)
+                              .sort((a,b)=>a.t-b.t);
+            if (recent.length >= 2) {
+              diff = (recent[recent.length-1].v) - (recent[0].v);
+            } else if (arr.length >= 1) {
+              // 1点以下でも、1時間表示はラベル付きで0表示にする
+              diff = 0;
+            }
+          }
           if ($d) {
-            if (Array.isArray(win) && win.length >= 2) {
-              const first = win[0].v;
-              const lastv = win[win.length - 1].v;
-              const diff = lastv - first;
-              $d.textContent = (diff === 0 || Number.isNaN(diff)) ? '' :
-              `(${diff>0?'+':''}${diff.toLocaleString()} / ${RANGE_LABEL[state.range] || state.range})`;
-            } else {
+            const lbl = RANGE_LABEL[state.range] || state.range;
+            if (Number.isNaN(diff)) {
               $d.textContent = '';
+            } else {
+              $d.textContent = `(${diff>0?'+':''}${Number(diff).toLocaleString()} / ${lbl})`;
             }
           }
         } catch {}
@@ -234,12 +249,17 @@
           }).formatToParts(d).reduce((o,p)=> (o[p.type]=p.value, o), {});
           $u.textContent = `${f.year}/${f.month}/${f.day} ${f.hour}:${f.minute} JST`;
         }
-        // Δ（期間ウィンドウの最初と最後の合算）
+        // Δ（期間ウィンドウの最初と最後の合算）— 1時間はフォールバック
         if ($d) {
-          const diff = acc.last - acc.first;
-          $d.textContent = (diff===0 || Number.isNaN(diff)) ? '' :
-       　   `(${diff>0?'+':''}${diff.toLocaleString()} / ${RANGE_LABEL[state.range] || state.range})`;
-        }
+          let diffAll = acc.last - acc.first;
+          if ((Number.isNaN(diffAll) || !Number.isFinite(diffAll)) && state.range==='1h') {
+            // 1hで全店合算が定義しづらい場合は0表示（視認性優先）
+            diffAll = 0;
+          }
+          const lbl = RANGE_LABEL[state.range] || state.range;
+          if (Number.isNaN(diffAll)) $d.textContent = '';
+          else $d.textContent = `(${diffAll>0?'+':''}${Number(diffAll).toLocaleString()} / ${lbl})`;
+        }  
       }
       // スパークラインは従来どおり compose() で合成線を描画（表示目的）
       const allForSpark = compose(state.range);
