@@ -565,7 +565,7 @@
         if (state.overlays.has(h)) state.overlays.delete(h); else state.overlays.add(h);
         // chipsの見た目も同期
         const active = state.overlays.has(h);
-        document.querySelectorAll(\`.chip[data-h="\${h}"]\`).forEach(c=>c.classList.toggle('active', active));
+      　document.querySelectorAll(\`.chip[data-h="\${h}"]\`).forEach(c=>c.classList.toggle('active', active));
         draw();
       });
     });
