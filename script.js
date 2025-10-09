@@ -157,6 +157,12 @@
   }
      
    function applyCounts(){
+   // 表示用：期間ラベル（range → 日本語ラベル）
+   const RANGE_LABEL = {
+      '1h': '1時間',
+      '1d': '1日',
+      '1m': '当月'
+    };
     // 各店舗
     state.accounts.forEach(h=>{
       const arr = state.series.get(h)||[];
@@ -183,7 +189,7 @@
               const lastv = win[win.length - 1].v;
               const diff = lastv - first;
               $d.textContent = (diff === 0 || Number.isNaN(diff)) ? '' :
-                `(${diff>0?'+':''}${diff.toLocaleString()})`;
+              `(${diff>0?'+':''}${diff.toLocaleString()} / ${RANGE_LABEL[state.range] || state.range})`;
             } else {
               $d.textContent = '';
             }
