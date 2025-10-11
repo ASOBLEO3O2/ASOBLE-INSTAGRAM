@@ -23,6 +23,9 @@ export function buildDrawerSeries(state, handle, range, isoDate){
   const target = handle || 'ALL';
   const dateMs0 = startOfDayJST(isoDate);
   if (!Number.isFinite(dateMs0)) return [];
+  
+  // rows は関数スコープで必ず確保（ALLでも空配列で存在させる）
+  let rows = [];
 
   // --- 1) 単店 or 全店の時系列を得る
   function seriesFor(h){
@@ -32,8 +35,6 @@ export function buildDrawerSeries(state, handle, range, isoDate){
               .sort((a,b)=>a.t-b.t);
   }
  
-  // rows は常にスコープ内で定義しておく（ALLでも空配列で初期化）
-  let rows = [];
   if (target !== 'ALL') {
     rows = seriesFor(target);
     if (!rows.length) return [];
@@ -93,8 +94,7 @@ export function buildDrawerSeries(state, handle, range, isoDate){
     }
     return [...daily.entries()].map(([k,v])=>({ t: k*86400e3, v })).sort((a,b)=>a.t-b.t);
    }
-  }
-
+  
   // range === '1m' : 選択月の週足（各週の「最後値」）
   {
     const d = new Date(isoDate + 'T00:00:00+09:00');
