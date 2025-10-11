@@ -146,7 +146,13 @@ export function drawDrawerChart($container, data){
 
   const path = data.map((p,i)=> (i? 'L':'M') + x(p.t).toFixed(1) + ' ' + y(p.v).toFixed(1)).join(' ');
   const last = data[data.length-1];
-  const svg = `
+  // 軸目盛の作成（rangeをコンテナのdata-rangeで受ける：controller側から不要。簡易に推定）
+  const guessRange = (()=>{ const n=data.length; if(n<=8) return '1d'; if((xmax-xmin)<=24*3600e3) return '1h'; return '1m'; })();
+  const ticks = buildTicks(guessRange, xmin, xmax, data);
+  const tickLines = ticks.map(tx => `<line x1="${x(tx)}" y1="${T}" x2="${x(tx)}" y2="${H-B}" stroke="#fff" opacity="0.20" stroke-width="1"/>`).join('');
+  const tickLabels = ticks.map(tx => `<text x="${x(tx)}" y="${H-4}" font-size="11" text-anchor="middle" fill="#bcd" opacity="0.95">${formatTick(tx, guessRange)}</text>`).join('');
+
+  const svg =
   <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="followers trend">
     <rect x="0" y="0" width="${W}" height="${H}" fill="transparent"/>
     <!-- grid -->
@@ -154,10 +160,51 @@ export function drawDrawerChart($container, data){
       const yy = T + (H-T-B)*i/4;
       return `<line x1="${L}" y1="${yy}" x2="${W-R}" y2="${yy}" stroke="#fff" opacity="0.15" stroke-width="1"/>`;
     }).join('')}
+    <!-- x ticks -->
+    ${tickLines}
+    ${tickLabels}
     <!-- line -->
     <path d="${path}" fill="none" stroke="#6ad1e3" stroke-width="2" opacity="0.95"/>
     <!-- last dot -->
     <circle cx="${x(last.t)}" cy="${y(last.v)}" r="3" fill="#6ad1e3"/>
   </svg>`;
   $container.innerHTML = svg;
+}
+
+// 目盛位置の生成
+function buildTicks(range, xmin, xmax, data){
+  const out = [];
+  if (range==='1h'){
+    // 0,6,12,18,24（実データ範囲に収まるものだけ）
+    const day0 = new Date(new Date(xmin).toLocaleString('ja-JP',{timeZone:JST})); day0.setHours(0,0,0,0);
+    [0,6,12,18,24].forEach(h=>{
+      const t = +day0 + h*3600e3;
+      if (t>=xmin && t<=xmax) out.push(t);
+    });
+    return out;
+  }
+  if (range==='1d'){
+    // 7点の日足 → それぞれのtをそのままラベル
+    return data.map(d=>d.t);
+  }
+  // 1m：週始まり（推定）。最初の点の週頭、以降+7日
+  const first = data[0]?.t ?? xmin;
+  const monday = (d => { const dt=new Date(d); const k=(dt.getDay()+6)%7; dt.setDate(dt.getDate()-k); dt.setHours(0,0,0,0); return +dt; })(first);
+  for(let t=monday; t<=xmax+1; t+=7*86400e3){ if(t>=xmin) out.push(t); }
+  return out;
+}
+
+// 目盛ラベルのフォーマット
+function formatTick(t, range){
+  const d = new Date(t);
+  if (range==='1h'){
+    const hh = String(d.getHours()).padStart(2,'0');
+    return `${hh}:00`;
+  }
+  if (range==='1d' || range==='1m'){
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const dd = String(d.getDate()).padStart(2,'0');
+    return `${mm}/${dd}`;
+  }
+  return '';
 }
