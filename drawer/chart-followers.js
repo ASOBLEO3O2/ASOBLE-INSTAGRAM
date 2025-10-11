@@ -139,30 +139,38 @@ export function drawDrawerChart($container, data){
   }
   const xs = data.map(d=>d.t), ys = data.map(d=>d.v);
   const xmin = Math.min(...xs), xmax = Math.max(...xs);
-  const ymin = Math.min(...ys), ymax = Math.max(...ys);
+  let ymin = Math.min(...ys), ymax = Math.max(...ys);
+  // 値が全て同じ場合も線が見えるように最小スケールを確保
+  if (ymax === ymin) { ymax = ymin + 1; }
   const L=24,R=8,T=12,B=18;
   const x = t => L + (W-L-R) * ((t - xmin) / Math.max(1,(xmax-xmin)));
   const y = v => T + (H-T-B) * (1 - ((v - ymin) / Math.max(1,(ymax-ymin))));
 
   const path = data.map((p,i)=> (i? 'L':'M') + x(p.t).toFixed(1) + ' ' + y(p.v).toFixed(1)).join(' ');
   const last = data[data.length-1];
-  // 軸目盛の作成（rangeをコンテナのdata-rangeで受ける：controller側から不要。簡易に推定）
+  // 軸目盛の作成（簡易推定）
   const guessRange = (()=>{ const n=data.length; if(n<=8) return '1d'; if((xmax-xmin)<=24*3600e3) return '1h'; return '1m'; })();
   const ticks = buildTicks(guessRange, xmin, xmax, data);
-  const tickLines = ticks.map(tx => `<line x1="${x(tx)}" y1="${T}" x2="${x(tx)}" y2="${H-B}" stroke="#fff" opacity="0.20" stroke-width="1"/>`).join('');
-  const tickLabels = ticks.map(tx => `<text x="${x(tx)}" y="${H-4}" font-size="11" text-anchor="middle" fill="#bcd" opacity="0.95">${formatTick(tx, guessRange)}</text>`).join('');
+  const tickLines = ticks.map(tx => `<line x1="${x(tx)}" y1="${T}" x2="${x(tx)}" y2="${H-B}" stroke="#fff" opacity="0.25" stroke-width="1"/>`).join('');
+  const tickLabels = ticks.map((tx,i,arr) => {
+    const anchor = (i===0) ? 'start' : (i===arr.length-1 ? 'end' : 'middle');
+    return `<text x="${x(tx)}" y="${H-6}" font-size="12" text-anchor="${anchor}" fill="#bcd" opacity="0.98">${formatTick(tx, guessRange)}</text>`;
+  }).join('');
+  const note = (guessRange==='1h') ? '（時間別）' : (guessRange==='1d') ? '（日別）' : '（週別）';
 
   const svg = `
   <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="followers trend">
     <rect x="0" y="0" width="${W}" height="${H}" fill="transparent"/>
     <!-- grid -->
     ${[0,1,2,3,4].map(i=>{
-      const yy = T + (H-T-B)*i/4;
-      return `<line x1="${L}" y1="${yy}" x2="${W-R}" y2="${yy}" stroke="#fff" opacity="0.15" stroke-width="1"/>`;
+     const yy = T + (H-T-B)*i/4;
+     return `<line x1="${L}" y1="${yy}" x2="${W-R}" y2="${yy}" stroke="#fff" opacity="0.25" stroke-width="1"/>`;
     }).join('')}
     <!-- x ticks -->
     ${tickLines}
     ${tickLabels}
+    <!-- note -->
+    <text x="${W-R}" y="${H-2}" font-size="11" text-anchor="end" fill="#9ab" opacity="0.9">${note}</text>
     <!-- line -->
     <path d="${path}" fill="none" stroke="#6ad1e3" stroke-width="2" opacity="0.95"/>
     <!-- last dot -->
