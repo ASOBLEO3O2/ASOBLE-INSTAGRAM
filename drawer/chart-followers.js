@@ -30,9 +30,12 @@ export function buildDrawerSeries(state, handle, range, isoDate){
     return arr.map(x=>({ t: toTime(x.t), v: Number(x.followers)||0 }))
               .filter(x=>Number.isFinite(x.t))
               .sort((a,b)=>a.t-b.t);
-
-  let rows = seriesFor(target);
-  if (target!=='ALL' && !rows.length) return [];
+  }
+  let rows = [];                         // ← 常に定義
+  if (target !== 'ALL') {
+    rows = seriesFor(target);
+    if (!rows.length) return [];
+  }
   // --- 2) 粒度別に抽出
   if (range === '1h'){
     // 選択日の 0:00〜23:59 の時間足（存在するサンプルの「最後値」を1時間ごとに）
