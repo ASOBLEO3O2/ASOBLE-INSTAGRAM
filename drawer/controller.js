@@ -71,6 +71,13 @@ function hookDrawerEvents($dash, state){
       renderTrend(state);
     };
   }
+  // 日付ナビ（◀/今日/▶）
+  $dash.querySelectorAll('.drawer-date-nav').forEach(btn=>{
+    btn.onclick = ()=>{
+      const step = btn.getAttribute('data-nav'); // "-1" | "0" | "+1"
+      shiftDrawerDate(state, step);
+    };
+  });
   // タブ切替（今回は trend/insights の枠。insightsは後段実装）
   $dash.querySelectorAll('[data-tab]').forEach(el=>{
     el.onclick = () => {
@@ -105,4 +112,31 @@ function hookRangeRelay(state){
     // script.js側で state.range が更新された後に反映
     setTimeout(()=>renderTrend(state), 0);
   }
+}
+
+// rangeに応じて日にちをシフト
+function shiftDrawerDate(state, stepStr){
+  const step = Number(stepStr);
+  if (Number.isNaN(step)) return;
+  const d = state.drawer?.date;
+  if (!d) return;
+  const base = new Date(d + 'T00:00:00+09:00');
+  if (step === 0){
+    // 今日に戻す
+    const y = new Date().toLocaleString('ja-JP',{timeZone:'Asia/Tokyo'});
+    const dt = new Date(y.replace(/\//g,'-'));
+    state.drawer.date = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+  }else{
+    const deltaDays = (state.range==='1m') ? 7*step : 1*step;
+    base.setDate(base.getDate() + deltaDays);
+    const yy = base.getFullYear();
+    const mm = String(base.getMonth()+1).padStart(2,'0');
+    const dd = String(base.getDate()).padStart(2,'0');
+    state.drawer.date = `${yy}-${mm}-${dd}`;
+  }
+  // 画面反映
+  const $date = document.querySelector('.drawer-date');
+  if ($date) $date.value = state.drawer.date;
+  const $dash = document.getElementById('dashboard');
+  if ($dash) renderTrend(state);
 }
