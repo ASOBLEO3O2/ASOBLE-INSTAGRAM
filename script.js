@@ -227,13 +227,19 @@
       if ($c) {
         const acc = state.accounts.reduce((sum, h) => {
           const arr = state.series.get(h) || [];
+          // 現在値（レンジ非依存）: 各店舗の全履歴の最後を合算
+          const latest = arr[arr.length - 1];
+          if (latest && Number.isFinite(new Date(latest.t).getTime())) {
+            sum.last += Number(latest.followers) || 0;
+            sum.tLatest = Math.max(sum.tLatest, new Date(latest.t).getTime() || 0);
+          }
+          // Δ用（レンジ依存）: ウィンドウの最初と最後のみ合算
           const win = pickWindow(arr, state.range);
           if (Array.isArray(win) && win.length) {
             const first = win[0];
-            const last  = win[win.length - 1];
-            sum.first   += Number(first.v) || 0;
-            sum.last    += Number(last.v)  || 0;
-            sum.tLatest  = Math.max(sum.tLatest, Number(last.t) || 0);
+            const lastW = win[win.length - 1];
+            sum.first += Number(first.v) || 0;
+            // sum.last は最新値で既に加算済み（レンジ値は使わない）
           }
           return sum;
         }, { first: 0, last: 0, tLatest: 0 });
