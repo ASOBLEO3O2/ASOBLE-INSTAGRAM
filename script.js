@@ -575,7 +575,6 @@
         draw();
       });
     });
- }
 // --- expose for debugging (read-only use from DevTools) ---
 window.ASOBLE = Object.assign(window.ASOBLE || {}, { state });
 })();
