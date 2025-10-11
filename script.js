@@ -1,4 +1,8 @@
+// drawer 呼び出し型へ移行
+import { openDashboard } from './drawer/controller.js';
+
 (async function main(){
+
   const $cards   = document.getElementById('cards');
   const $openAll = document.getElementById('open-all');
   const $refresh = document.getElementById('refresh');
@@ -56,7 +60,7 @@
         // リンク/ボタンはドロワー開閉の対象外
         if (e.target.closest('a,button')) return;
         const h = card.getAttribute('data-target');
-        openDashboard(h);
+        openDashboard(h, state);
       });
     });
    // DOM生成直後の同期タイミングで一度実行
@@ -484,97 +488,6 @@
       ctx.stroke();
     });
   } 
-
-  /** === dashboard === */
-  function openDashboard(handle){
-    state.target = handle || 'ALL';
-    renderDashboard(state.target);
-    if ($dash){
-      $dash.hidden = false;
-      $dash.classList.add('is-open');
-    }
-  }
-  function renderDashboard(target){
-    if(!$dash) return;
-    // 最小実装：タイトルと主要値のみ（詳細グラフは既存 draw/compose を流用して後続拡張）
-    let title = (target==='ALL') ? '全店ダッシュボード' : `@${target} のダッシュボード`;
-    let count = '—', delta = '';
-    if (target === 'ALL') {
-      // === ダッシュボードはカードの値をそのまま再利用 ===
-      const $count = document.querySelector('.count[data-h="ALL"]');
-      const $delta = document.querySelector('.delta[data-h="ALL"]');
-      if ($count) count = $count.textContent;
-      if ($delta) delta = $delta.textContent;
-    } else {
-       const arr = state.series.get(target)||[];
-      const win = pickWindow(arr, state.range);
-      if(win.length>=1){
-        const first = win[0].v, last = win[win.length-1].v;
-        count = Number(last).toLocaleString();
-        const diff = last-first;
-        delta = (diff===0||Number.isNaN(diff))? '' : `(${diff>0?'+':''}${diff.toLocaleString()})`;
-      }
-    }
-    // === ランキング用データ作成（現在のレンジに連動） ===
-    const records = state.accounts.map(h=>{
-      const arr = state.series.get(h)||[];
-      const win = pickWindow(arr, state.range);
-      let diff = NaN;
-      if (Array.isArray(win) && win.length >= 2) {
-        diff = (win[win.length-1].v) - (win[0].v);
-      } else if (state.range === '1h') {
-        // 1時間だけは“見える化”優先で0にフォールバック
-        diff = 0;
-      }
-      return { h, diff: Number(diff) };
-    }).filter(x=>Number.isFinite(x.diff));
-    // 上位3／下位3
-    const top3  = [...records].sort((a,b)=>b.diff-a.diff).slice(0,3);
-    const worst3= [...records].sort((a,b)=>a.diff-b.diff).slice(0,3);
-
-    // === ダッシュボード描画 ===
-    $dash.innerHTML = `
-      <h2 style="margin:0 0 8px 0;font-size:18px;">${title}</h2>
-      <div style="font-size:14px;display:flex;gap:8px;align-items:baseline;margin-bottom:8px;">
-        <span style="font-weight:700;font-size:22px;">${count}</span>
-        <span>${delta}</span>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div>
-          <div style="font-weight:600;margin-bottom:4px;">増加 上位3</div>
-          <ol style="margin:0;padding-left:18px;">
-            ${top3.map(x=>`<li class="rank-item" data-h="${x.h}" style="cursor:pointer;line-height:1.6;">
-              <span style="display:inline-block;min-width:7em;">@${x.h}</span>
-              <strong>${x.diff>0?'+':''}${x.diff.toLocaleString()}</strong>
-            </li>`).join('')}
-          </ol>
-        </div>
-        <div>
-          <div style="font-weight:600;margin-bottom:4px;">減少 下位3</div>
-          <ol style="margin:0;padding-left:18px;">
-            ${worst3.map(x=>`<li class="rank-item" data-h="${x.h}" style="cursor:pointer;line-height:1.6;">
-              <span style="display:inline-block;min-width:7em;">@${x.h}</span>
-              <strong>${x.diff>0?'+':''}${x.diff.toLocaleString()}</strong>
-            </li>`).join('')}
-          </ol>
-        </div>
-      </div>
-      <div style="margin-top:8px;font-size:12px;color:#789;">
-        ※ 行をクリックすると、その店舗の線をメインチャートにオーバーレイ表示します。
-      </div>
-    `;
-    // クリックでオーバーレイ線のトグル
-    $dash.querySelectorAll('.rank-item').forEach(el=>{
-      el.addEventListener('click', ()=>{
-        const h = el.getAttribute('data-h');
-        if (!h) return;
-        if (state.overlays.has(h)) state.overlays.delete(h); else state.overlays.add(h);
-        const active = state.overlays.has(h);
-        document.querySelectorAll(`.chip[data-h="${h}"]`).forEach(c=>c.classList.toggle('active', active));
-        draw();
-      });
-    });
-  }
   // --- expose for debugging (read-only use from DevTools, dev only) ---
   if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
     window.ASOBLE = Object.assign(window.ASOBLE || {}, { state });
