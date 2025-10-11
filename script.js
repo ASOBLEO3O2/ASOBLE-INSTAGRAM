@@ -575,6 +575,8 @@
       });
     });
   }
-  // --- expose for debugging (read-only use from DevTools) ---
-  window.ASOBLE = Object.assign(window.ASOBLE || {}, { state });
-})();
+  // --- expose for debugging (read-only use from DevTools, dev only) ---
+  if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+    window.ASOBLE = Object.assign(window.ASOBLE || {}, { state });
+  }
+  })();
