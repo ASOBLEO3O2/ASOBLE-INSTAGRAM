@@ -21,7 +21,6 @@ function weekOf(d){
 
 export function buildDrawerSeries(state, handle, range, isoDate){
   const target = handle || 'ALL';
-  const isAll = (target === 'ALL');
   const dateMs0 = startOfDayJST(isoDate);
   if (!Number.isFinite(dateMs0)) return [];
 
