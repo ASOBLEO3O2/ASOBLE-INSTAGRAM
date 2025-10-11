@@ -31,11 +31,16 @@ export function buildDrawerSeries(state, handle, range, isoDate){
               .filter(x=>Number.isFinite(x.t))
               .sort((a,b)=>a.t-b.t);
   }
-  let rows = [];                         // ← 常に定義
+ 
+  // rows は常にスコープ内で定義しておく（ALLでも空配列で初期化）
+  let rows = [];
   if (target !== 'ALL') {
     rows = seriesFor(target);
     if (!rows.length) return [];
   }
+  // 念のための防御（どこかで再代入されても未定義にはならない）
+  if (!Array.isArray(rows)) rows = [];
+ 
   // --- 2) 粒度別に抽出
   if (range === '1h'){
     // 選択日の 0:00〜23:59 の時間足（存在するサンプルの「最後値」を1時間ごとに）
