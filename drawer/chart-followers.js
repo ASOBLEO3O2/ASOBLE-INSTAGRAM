@@ -32,16 +32,15 @@ export function buildDrawerSeries(state, handle, range, isoDate){
               .filter(x=>Number.isFinite(x.t))
               .sort((a,b)=>a.t-b.t);
 
-  if (!rows.length) return [];
-  const isAll = (target === 'ALL');
-  let rows = isAll ? [] : seriesFor(target);
+  let rows = (target==='ALL') ? [] : seriesFor(target);
+  if (!rows.length && target!=='ALL') return [];
   // --- 2) 粒度別に抽出
   if (range === '1h'){
     // 選択日の 0:00〜23:59 の時間足（存在するサンプルの「最後値」を1時間ごとに）
     const from = dateMs0;
     const to   = from + 24*3600e3 - 1;
     const hourly = new Map(); // key=0..23, val=合計終値
-    if (isAll){
+    if (target==='ALL'){
       // 店舗ごとに「時間バケットの終値」を取り、それらを同じバケットで加算
       state.accounts.forEach(h=>{
         const per = new Map();
@@ -68,7 +67,7 @@ export function buildDrawerSeries(state, handle, range, isoDate){
     const from = center - 3*86400e3;
     const to   = center + 3*86400e3 + (86400e3-1);
     const daily = new Map(); // key=dayBucket, val=合計終値
-    if (isAll){
+    if (target==='ALL'){
       state.accounts.forEach(h=>{
         const per = new Map();
         seriesFor(h).forEach(x=>{
@@ -95,7 +94,7 @@ export function buildDrawerSeries(state, handle, range, isoDate){
     const monthStart = new Date(d.getFullYear(), d.getMonth(), 1).getTime();
     const monthEnd   = new Date(d.getFullYear(), d.getMonth()+1, 0, 23,59,59,999).getTime();
     const weekly = new Map(); // key=weekStart(Mon), val=合計終値
-    if (isAll){
+    if (target==='ALL'){
       state.accounts.forEach(h=>{
         const per = new Map();
         seriesFor(h).forEach(x=>{
