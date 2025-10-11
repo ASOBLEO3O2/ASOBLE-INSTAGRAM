@@ -30,33 +30,34 @@ export function buildDrawerSeries(state, handle, range, isoDate){
     return arr.map(x=>({ t: toTime(x.t), v: Number(x.followers)||0 }))
               .filter(x=>Number.isFinite(x.t))
               .sort((a,b)=>a.t-b.t);
-  }
-  let rows = [];
-  if (target === 'ALL'){
-    const bucket = new Map();
-    state.accounts.forEach(h=>{
-      seriesFor(h).forEach(p=>{
-        bucket.set(p.t, (bucket.get(p.t)||0) + p.v);
-      });
-    });
-    rows = [...bucket.entries()].map(([t,v])=>({t:+t,v}));
-    rows.sort((a,b)=>a.t-b.t);
-  }else{
-    rows = seriesFor(target);
-  }
-  if (!rows.length) return [];
 
+  if (!rows.length) return [];
+  const isAll = (target === 'ALL');
+  let rows = isAll ? [] : seriesFor(target);
   // --- 2) 粒度別に抽出
   if (range === '1h'){
     // 選択日の 0:00〜23:59 の時間足（存在するサンプルの「最後値」を1時間ごとに）
     const from = dateMs0;
     const to   = from + 24*3600e3 - 1;
-    const hourly = new Map(); // key=hourBucket, val=lastV
-    rows.forEach(x=>{
-      if (x.t < from || x.t > to) return;
-      const k = Math.floor((x.t - from)/3600e3); // 0..23
-      hourly.set(k, x.v);
-    });
+    const hourly = new Map(); // key=0..23, val=合計終値
+    if (isAll){
+      // 店舗ごとに「時間バケットの終値」を取り、それらを同じバケットで加算
+      state.accounts.forEach(h=>{
+        const per = new Map();
+        seriesFor(h).forEach(x=>{
+          if (x.t < from || x.t > to) return;
+          const k = Math.floor((x.t - from)/3600e3);
+          per.set(k, x.v); // その店舗のその時間の「最後値」
+        });
+        per.forEach((v,k)=> hourly.set(k, (hourly.get(k)||0)+v));
+      });
+    }else{
+      rows.forEach(x=>{
+        if (x.t < from || x.t > to) return;
+        const k = Math.floor((x.t - from)/3600e3);
+        hourly.set(k, x.v); // 単店は終値で上書き
+      });
+    }
     return [...hourly.entries()].map(([k,v])=>({ t: from + k*3600e3, v })).sort((a,b)=>a.t-b.t);
   }
 
@@ -65,13 +66,26 @@ export function buildDrawerSeries(state, handle, range, isoDate){
     const center = dateMs0;
     const from = center - 3*86400e3;
     const to   = center + 3*86400e3 + (86400e3-1);
-    const daily = new Map(); // key=dayBucket, val=lastV
-    rows.forEach(x=>{
-      if (x.t < from || x.t > to) return;
-      const k = Math.floor(x.t/86400e3);
-      daily.set(k, x.v);
-    });
+    const daily = new Map(); // key=dayBucket, val=合計終値
+    if (isAll){
+      state.accounts.forEach(h=>{
+        const per = new Map();
+        seriesFor(h).forEach(x=>{
+          if (x.t < from || x.t > to) return;
+          const k = Math.floor(x.t/86400e3);
+          per.set(k, x.v);
+        });
+        per.forEach((v,k)=> daily.set(k, (daily.get(k)||0)+v));
+      });
+    }else{
+      rows.forEach(x=>{
+        if (x.t < from || x.t > to) return;
+        const k = Math.floor(x.t/86400e3);
+        daily.set(k, x.v);
+      });
+    }
     return [...daily.entries()].map(([k,v])=>({ t: k*86400e3, v })).sort((a,b)=>a.t-b.t);
+   }
   }
 
   // range === '1m' : 選択月の週足（各週の「最後値」）
@@ -79,12 +93,24 @@ export function buildDrawerSeries(state, handle, range, isoDate){
     const d = new Date(isoDate + 'T00:00:00+09:00');
     const monthStart = new Date(d.getFullYear(), d.getMonth(), 1).getTime();
     const monthEnd   = new Date(d.getFullYear(), d.getMonth()+1, 0, 23,59,59,999).getTime();
-    const weekly = new Map(); // key=weekStart(Mon), val=lastV
-    rows.forEach(x=>{
-      if (x.t < monthStart || x.t > monthEnd) return;
-      const wk = weekOf(x.t);
-      weekly.set(wk, x.v);
-    });
+    const weekly = new Map(); // key=weekStart(Mon), val=合計終値
+    if (isAll){
+      state.accounts.forEach(h=>{
+        const per = new Map();
+        seriesFor(h).forEach(x=>{
+          if (x.t < monthStart || x.t > monthEnd) return;
+          const wk = weekOf(x.t);
+          per.set(wk, x.v); // 週内の最後値
+        });
+        per.forEach((v,k)=> weekly.set(k, (weekly.get(k)||0)+v));
+      });
+    }else{
+      rows.forEach(x=>{
+        if (x.t < monthStart || x.t > monthEnd) return;
+        const wk = weekOf(x.t);
+        weekly.set(wk, x.v);
+      });
+    }
     return [...weekly.entries()].map(([k,v])=>({ t: k, v })).sort((a,b)=>a.t-b.t);
   }
 }
