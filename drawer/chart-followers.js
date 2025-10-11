@@ -152,7 +152,7 @@ export function drawDrawerChart($container, data){
   const tickLines = ticks.map(tx => `<line x1="${x(tx)}" y1="${T}" x2="${x(tx)}" y2="${H-B}" stroke="#fff" opacity="0.20" stroke-width="1"/>`).join('');
   const tickLabels = ticks.map(tx => `<text x="${x(tx)}" y="${H-4}" font-size="11" text-anchor="middle" fill="#bcd" opacity="0.95">${formatTick(tx, guessRange)}</text>`).join('');
 
-  const svg =
+  const svg = `
   <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="followers trend">
     <rect x="0" y="0" width="${W}" height="${H}" fill="transparent"/>
     <!-- grid -->
