@@ -111,15 +111,23 @@ async function main(){
   const since = date, until = date;
   const generatedAt = nowIsoJst();
 
-  // 旧名 <-> API名 の互換マッピング
-  const toApi = (name) => {
-    if (name === 'impressions') return 'content_views';
-    return name;
+  // 旧名 <-> API名 の互換マッピング（insights用）
+  const ALIAS = {
+    impressions: 'content_views',    // 旧: impressions
+    accounts_reached: 'reach',       // 旧: accounts_reached
   };
-  const fromApi = (name) => {
-    if (name === 'content_views') return 'impressions';
-    return name;
-  };
+  // Graph API v23 の insights が受け付けるメトリクス（主要どころ）
+  const ALLOWED = new Set([
+    'reach','follower_count','website_clicks','profile_views','online_followers',
+    'accounts_engaged','total_interactions','likes','comments','shares','saves','replies',
+    'engaged_audience_demographics','reached_audience_demographics','follower_demographics',
+    'follows_and_unfollows','profile_links_taps','views',
+    'threads_likes','threads_replies','reposts','quotes',
+    'threads_followers','threads_follower_demographics',
+    'content_views','threads_views','threads_clicks'
+  ]);
+  const toApi = (name) => ALIAS[name] ?? name;
+  const fromApi = (name) => (name === 'content_views' ? 'impressions' : name);
 
   for (const a of accounts){
   
@@ -144,11 +152,13 @@ async function main(){
       continue;
     }
 
-     // insights: Config値をAPI名へ変換。followers_count は toApi で follower_count へ。
+    // insights: Config値→API名へ変換し、ALLOWED外は除外（警告表示）。followers_count は送らない。
     const apiMetricsAll = metrics.map(toApi);
-    // もし Config に followers_count があって toApi で follower_count になる場合、
-    // 別エンドポイントと重複しないように調整（後段のfollowers_count別取得と排他）
-    const metricsForInsights = apiMetricsAll.filter(k => k !== 'follower_count' || !metrics.includes('followers_count'));
+    const invalid = apiMetricsAll.filter(m => !ALLOWED.has(m));
+    if (invalid.length) console.warn(`[warn] drop unsupported metrics: ${invalid.join(',')}`);
+    const metricsForInsights = apiMetricsAll
+      .filter(m => ALLOWED.has(m))
+      .filter(m => m !== 'follower_count'); // followerは別エンドポイント
     let insightValues = {};
     if (metricsForInsights.length){
       const url = new URL(`https://graph.facebook.com/${API_VER}/${igId}/insights`);
