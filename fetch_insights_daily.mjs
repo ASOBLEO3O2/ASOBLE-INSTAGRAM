@@ -177,14 +177,18 @@ async function main(){
       }
     }
 
-     // followers_count は別エンドポイント（Configに含まれており、かつ上でAPIに投げていない場合のみ）
+    // followers_count は別エンドポイント（v23: field=follower_count
     let followersCount = null;
-    if (metrics.includes('followers_count') && !apiMetricsAll.includes('follower_count')){
+    if (metrics.includes('followers_count')){
       const u2 = new URL(`https://graph.facebook.com/${API_VER}/${igId}`);
-      u2.searchParams.set('fields', 'followers_count');
+     // v23 正式フィールド名
+      u2.searchParams.set('fields', 'follower_count');
       u2.searchParams.set('access_token', token);
       const j2 = await fetchJson(u2.toString());
-      followersCount = Number(j2?.followers_count) || 0;
+      // 優先: follower_count（v23） / 互換: followers_count（万一返ってきた場合）
+      followersCount = Number(
+        (j2 && (j2.follower_count ?? j2.followers_count)) ?? 0
+      ) || 0;
     }
 
     const outMetrics = { ...insightValues };
