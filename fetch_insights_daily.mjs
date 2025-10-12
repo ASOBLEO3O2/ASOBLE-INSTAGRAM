@@ -185,10 +185,17 @@ async function main(){
       u2.searchParams.set('fields', 'followers_count');
       u2.searchParams.set('access_token', token);
       const j2 = await fetchJson(u2.toString());
-      // v23 互換：基本は followers_count、万一 f(単数)が来ても拾う
-      const fcRaw = (j2 && (j2.followers_count ?? j2.follower_count));
-      const fcNum = (typeof fcRaw === 'number') ? fcRaw : Number(fcRaw || 0);
-      followersCount = Number.isFinite(fcNum) ? fcNum : 0; 
+      // v23互換：基本は followers_count、万一 follower_count が来ても拾う
+      let fcRaw = null;
+      if (j2 && typeof j2 === 'object') {
+        if (Object.prototype.hasOwnProperty.call(j2, 'followers_count')) {
+          fcRaw = j2.followers_count;
+        } else if (Object.prototype.hasOwnProperty.call(j2, 'follower_count')) {
+          fcRaw = j2.follower_count;
+        }
+      }
+      const fcNum = Number(fcRaw);
+      followersCount = Number.isFinite(fcNum) ? fcNum : 0;
       ) || 0;
     }
 
