@@ -231,25 +231,27 @@ import { openDashboard } from './drawer/controller.js';
       if ($c) {
         const acc = state.accounts.reduce((sum, h) => {
           const arr = state.series.get(h) || [];
-          // 現在値（レンジ非依存）: 各店舗の全履歴の最後を合算
+          // 現在値（レンジ非依存）: 各店の全履歴の最後を合算（表示用）
           const latest = arr[arr.length - 1];
           if (latest && Number.isFinite(new Date(latest.t).getTime())) {
-            sum.last += Number(latest.followers) || 0;
+            sum.current += Number(latest.followers) || 0;
             sum.tLatest = Math.max(sum.tLatest, new Date(latest.t).getTime() || 0);
           }
-          // Δ用（レンジ依存）: ウィンドウの最初と最後のみ合算
+          // Δ用（レンジ依存）: 同じウィンドウ内の first/last を“両方揃っている店舗だけ”加算
           const win = pickWindow(arr, state.range);
-          if (Array.isArray(win) && win.length) {
+          if (Array.isArray(win) && win.length >= 2) {
             const first = win[0];
             const lastW = win[win.length - 1];
-            sum.first += Number(first.v) || 0;
-            // sum.last は最新値で既に加算済み（レンジ値は使わない）
+            sum.firstW += Number(first.v) || 0;
+            sum.lastW  += Number(lastW.v)  || 0;
+            sum.tLatest = Math.max(sum.tLatest, Number(lastW.t) || 0);
+            sum.used += 1;
           }
           return sum;
-        }, { first: 0, last: 0, tLatest: 0 });
+        }, { firstW: 0, lastW: 0, current: 0, tLatest: 0, used: 0 });
 
         // 現在値
-        $c.textContent = Number(acc.last).toLocaleString();
+       $c.textContent = Number(acc.current).toLocaleString();
         // 最終更新（各店の最後の時刻の最大）
         if ($u && acc.tLatest > 0) {
           const d = new Date(acc.tLatest);
@@ -261,8 +263,8 @@ import { openDashboard } from './drawer/controller.js';
         }
         // Δ（期間ウィンドウの最初と最後の合算）— 1時間はフォールバック
         if ($d) {
-          let diffAll = acc.last - acc.first;
-          if ((Number.isNaN(diffAll) || !Number.isFinite(diffAll)) && state.range==='1h') {
+         let diffAll = acc.lastW - acc.firstW;
+          if ((Number.isNaN(diffAll) || !Number.isFinite(diffAll) || acc.used===0) && state.range==='1h') {
             // 1hで全店合算が定義しづらい場合は0表示（視認性優先）
             diffAll = 0;
           }
