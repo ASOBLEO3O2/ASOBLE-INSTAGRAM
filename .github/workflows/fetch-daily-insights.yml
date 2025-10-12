@@ -30,6 +30,14 @@ jobs:
           PAGE_TOKEN_ASOBLE_YUMEGAOKA: ${{ secrets.PAGE_TOKEN_ASOBLE_YUMEGAOKA }}
           PAGE_TOKEN_KININAL_ASOBLE_IRISO: ${{ secrets.PAGE_TOKEN_KININAL_ASOBLE_IRISO }}
           PAGE_TOKEN_ASOBLE_OHMEOTSU: ${{ secrets.PAGE_TOKEN_ASOBLE_OHMEOTSU }}
+          # IG IDs も Secrets から環境変数へ（コードは IG_ID_{HANDLE} を参照）
+          IG_ID_ASOBLE_KITAKYUSHU: ${{ secrets.IG_ID_ASOBLE_KITAKYUSHU }}
+          IG_ID_ASOBLE_HONAMI: ${{ secrets.IG_ID_ASOBLE_HONAMI }}
+          IG_ID_ASOBLE_YUMEGAOKA: ${{ secrets.IG_ID_ASOBLE_YUMEGAOKA }}
+          IG_ID_KININAL_ASOBLE_IRISO: ${{ secrets.IG_ID_KININAL_ASOBLE_IRISO }}
+          IG_ID_ASOBLE_OHMEOTSU: ${{ secrets.IG_ID_ASOBLE_OHMEOTSU }}
+          IG_ID_ASOBLE_SAGAMIHARA: ${{ secrets.IG_ID_ASOBLE_SAGAMIHARA }}
+        
         run: |
           node fetch_insights_daily.mjs
 
