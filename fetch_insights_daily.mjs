@@ -86,6 +86,14 @@ function normalizeAccount(a){
     }
     return { handle, igId, token, raw: a };
   }
+  // 4) 文字列型: ハンドル名のみ（Secretsからトークンを取得）
+  if (typeof a === 'string') {
+    const handle = a;
+    const envKey = `PAGE_TOKEN_${String(handle).toUpperCase().replace(/[^A-Z0-9]+/g,'_')}`;
+    const token = process.env[envKey] || null;
+    return { handle, igId: null, token, raw: a };
+  }
+  
   // 3) それ以外は未対応
   return { handle: null, igId: null, token: null, raw: a };
 }
