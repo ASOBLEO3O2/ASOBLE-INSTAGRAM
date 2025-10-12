@@ -155,6 +155,12 @@ async function main(){
     if (metricsForInsights.length){
       const url = new URL(`https://graph.facebook.com/${API_VER}/${igId}/insights`);
       url.searchParams.set('metric', metricsForInsights.join(','));
+      // 一部メトリクスは total_value 指定が必須（v23）
+      const needsTotal = metricsForInsights.some(n => (
+        n === 'content_views' || n === 'profile_views' || n === 'accounts_engaged'
+      ));
+      if (needsTotal) url.searchParams.set('metric_type', 'total_value');
+      url.searchParams.set('period', period);
       url.searchParams.set('period', period);
       url.searchParams.set('since', since);
       url.searchParams.set('until', until);
