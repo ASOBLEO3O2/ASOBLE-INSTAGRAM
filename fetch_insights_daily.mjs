@@ -184,10 +184,13 @@ async function main(){
       for (const item of (json?.data||[])){
         const name = fromApi(item?.name); // 旧名へ戻す（例：content_views→impressions）
         const arr = Array.isArray(item?.values) ? item.values : [];
-        const v = arr[0]?.value;
-        if (typeof v === 'number') insightValues[name] = v;
-        else if (v && typeof v === 'object' && typeof v.value === 'number') insightValues[name] = v.value; // 念のため
-        else insightValues[name] = 0;
+        const val = arr[0];
+        let n = 0;
+        if (val) {
+          if (typeof val.value === 'number') n = val.value;
+          else if (val.total_value && typeof val.total_value.value === 'number') n = val.total_value.value;
+        }
+        insightValues[name] = Number.isFinite(n) ? n : 0;
       }
     }
 
