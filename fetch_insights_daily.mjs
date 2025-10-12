@@ -123,7 +123,7 @@ async function main(){
     const token  = process.env[envKeyTk]  || null;
 
     if (!handle || !igId || !token){
-      console.error(`[skip] missing field(s): handle=${handle}, igId=${igId}, token=${!!token}`);
+      console.error(`[skip] missing field(s) :: handle=${handle} , igId=${igId?'SET':'MISSING'}(${envKeyId}) , token=${token?'SET':'MISSING'}(${envKeyTk})`);
       continue;
     }
     if (!handle || !igId || !token){
