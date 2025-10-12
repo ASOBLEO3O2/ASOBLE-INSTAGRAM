@@ -36,14 +36,22 @@ jobs:
       - name: Commit & push (skip if no changes)
         run: |
           set -euo pipefail
-           # 出力が無い（= ディレクトリ未生成）場合はスキップ
-          if [ ! -d data/insights ]; then
-            echo "no insights directory -> skip commit"
+          # どちらの保存先でも対応（現行: data/account / 目標: data/insights）
+          has_any=0
+          if [ -d data/insights ]; then
+            git add -A data/insights
+            has_any=1
+          fi
+          if [ -d data/account ]; then
+            git add -A data/account
+            has_any=1
+          fi
+          if [ "$has_any" = "0" ]; then
+            echo "no insights/account directory -> skip commit"
             exit 0
           fi
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A data/insights
           if git diff --cached --quiet; then
             echo "no changes to push"
             exit 0
