@@ -19,6 +19,24 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: "18" }
 
+      - name: Preflight – check required env vars exist (names only)
+        run: |
+          node -e "const fs=require('fs');const A=JSON.parse(fs.readFileSync('accounts.json','utf8')).accounts||[];for(const h of A){const handle=(typeof h==='string')?h:(h.handle||h.account||h.username||h.name||h.store||h.page);if(!handle){console.log('WARN no-handle entry:',JSON.stringify(h));continue;}const K1='IG_ID_'+handle.toUpperCase().replace(/[^A-Z0-9]+/g,'_');const K2='PAGE_TOKEN_'+handle.toUpperCase().replace(/[^A-Z0-9]+/g,'_');const ok1=!!process.env[K1];const ok2=!!process.env[K2];console.log(`[check] ${handle} :: ${K1}=${ok1?'SET':'MISSING'} , ${K2}=${ok2?'SET':'MISSING'}`)}"
+        env:
+          # 既存の PAGE_TOKEN_* に加え IG_ID_* も注入（無ければ MISSING と出ます）
+          IG_ID_ASOBLE_KITAKYUSHU: ${{ secrets.IG_ID_ASOBLE_KITAKYUSHU }}
+          IG_ID_ASOBLE_HONAMI: ${{ secrets.IG_ID_ASOBLE_HONAMI }}
+          IG_ID_ASOBLE_YUMEGAOKA: ${{ secrets.IG_ID_ASOBLE_YUMEGAOKA }}
+          IG_ID_KININAL_ASOBLE_IRISO: ${{ secrets.IG_ID_KININAL_ASOBLE_IRISO }}
+          IG_ID_ASOBLE_OHMEOTSU: ${{ secrets.IG_ID_ASOBLE_OHMEOTSU }}
+          IG_ID_ASOBLE_SAGAMIHARA: ${{ secrets.IG_ID_ASOBLE_SAGAMIHARA }}
+          PAGE_TOKEN_ASOBLE_KITAKYUSHU: ${{ secrets.PAGE_TOKEN_ASOBLE_KITAKYUSHU }}
+          PAGE_TOKEN_ASOBLE_HONAMI: ${{ secrets.PAGE_TOKEN_ASOBLE_HONAMI }}
+          PAGE_TOKEN_ASOBLE_YUMEGAOKA: ${{ secrets.PAGE_TOKEN_ASOBLE_YUMEGAOKA }}
+          PAGE_TOKEN_KININAL_ASOBLE_IRISO: ${{ secrets.PAGE_TOKEN_KININAL_ASOBLE_IRISO }}
+          PAGE_TOKEN_ASOBLE_OHMEOTSU: ${{ secrets.PAGE_TOKEN_ASOBLE_OHMEOTSU }}
+          PAGE_TOKEN_ASOBLE_SAGAMIHARA: ${{ secrets.PAGE_TOKEN_ASOBLE_SAGAMIHARA }}
+
       - name: Run daily insights fetch
         env:
           # 例: リポジトリの Secrets に各店舗のページトークンを設定してください。
