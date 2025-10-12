@@ -55,6 +55,7 @@ jobs:
           IG_ID_KININAL_ASOBLE_IRISO: ${{ secrets.IG_ID_KININAL_ASOBLE_IRISO }}
           IG_ID_ASOBLE_OHMEOTSU: ${{ secrets.IG_ID_ASOBLE_OHMEOTSU }}
           IG_ID_ASOBLE_SAGAMIHARA: ${{ secrets.IG_ID_ASOBLE_SAGAMIHARA }}
+           DEBUG_INSIGHTS=1
         
         run: |
           node fetch_insights_daily.mjs
