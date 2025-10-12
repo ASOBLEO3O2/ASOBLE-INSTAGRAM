@@ -81,13 +81,18 @@ async function main(){
   const generatedAt = nowIsoJst();
 
   for (const a of accounts){
-    const handle = a.handle || a.account || a.username;
-    const igId   = a.igId || a.igID || a.instagram_id;
-    // 優先順位: a.token → 環境変数 PAGE_TOKEN_{HANDLE_UPPER}
+    // handle: handle | account | username | name | store | page
+    const handle =
+      a.handle || a.account || a.username || a.name || a.store || a.page;
+    // igId: igId | igID | instagram_id | id | ['ig-id']
+    const igId =
+      a.igId || a.igID || a.instagram_id || a.id || a['ig-id'];
+    // token: token | page_token | access_token | 環境変数
     const envKey = `PAGE_TOKEN_${String(handle||'').toUpperCase().replace(/[^A-Z0-9]+/g,'_')}`;
-    const token  = envOr(a, 'token', envKey);
+    const token  = a.token || a.page_token || a.access_token || envOr(a, 'token', envKey);
     if (!handle || !igId || !token){
-      console.error(`[skip] missing field(s): handle=${handle}, igId=${igId}, token=${!!token}`);
+      const keys = Object.keys(a||{});
+      console.error(`[skip] missing field(s) → handle=${handle}, igId=${igId}, token=${!!token} / keys=${keys.join(',')}`);
       continue;
     }
 
