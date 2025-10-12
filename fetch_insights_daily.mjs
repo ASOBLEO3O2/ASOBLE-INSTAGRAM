@@ -114,12 +114,10 @@ async function main(){
   // 旧名 <-> API名 の互換マッピング
   const toApi = (name) => {
     if (name === 'impressions') return 'content_views';
-    if (name === 'followers_count') return 'follower_count';
     return name;
   };
   const fromApi = (name) => {
     if (name === 'content_views') return 'impressions';
-    if (name === 'follower_count') return 'followers_count';
     return name;
   };
 
@@ -161,7 +159,6 @@ async function main(){
       ));
       if (needsTotal) url.searchParams.set('metric_type', 'total_value');
       url.searchParams.set('period', period);
-      url.searchParams.set('since', since);
       url.searchParams.set('until', until);
       url.searchParams.set('access_token', token);
       const json = await fetchJson(url.toString());
@@ -193,7 +190,6 @@ async function main(){
       }
       const fcNum = Number(fcRaw);
       followersCount = Number.isFinite(fcNum) ? fcNum : 0;
-      ) || 0;
     }
 
     const outMetrics = { ...insightValues };
