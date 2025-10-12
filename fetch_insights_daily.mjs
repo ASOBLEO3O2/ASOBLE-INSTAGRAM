@@ -111,7 +111,20 @@ async function main(){
   const since = date, until = date;
   const generatedAt = nowIsoJst();
 
+  // 旧名 <-> API名 の互換マッピング
+  const toApi = (name) => {
+    if (name === 'impressions') return 'content_views';
+    if (name === 'followers_count') return 'follower_count';
+    return name;
+  };
+  const fromApi = (name) => {
+    if (name === 'content_views') return 'impressions';
+    if (name === 'follower_count') return 'followers_count';
+    return name;
+  };
+
   for (const a of accounts){
+  
     const norm = normalizeAccount(a);
     const handle =
       a.handle || a.account || a.username || a.name || a.store || a.page || (typeof a === 'string' ? a : null);
@@ -133,8 +146,11 @@ async function main(){
       continue;
     }
 
-    // insights（followers_count 以外）
-    const metricsForInsights = metrics.filter(k => k !== 'followers_count');
+     // insights: Config値をAPI名へ変換。followers_count は toApi で follower_count へ。
+    const apiMetricsAll = metrics.map(toApi);
+    // もし Config に followers_count があって toApi で follower_count になる場合、
+    // 別エンドポイントと重複しないように調整（後段のfollowers_count別取得と排他）
+    const metricsForInsights = apiMetricsAll.filter(k => k !== 'follower_count' || !metrics.includes('followers_count'));
     let insightValues = {};
     if (metricsForInsights.length){
       const url = new URL(`https://graph.facebook.com/${API_VER}/${igId}/insights`);
@@ -146,7 +162,7 @@ async function main(){
       const json = await fetchJson(url.toString());
       // data: [{name, period, values:[{value, end_time}], title, id}, ...]
       for (const item of (json?.data||[])){
-        const name = item?.name;
+        const name = fromApi(item?.name); // 旧名へ戻す（例：content_views→impressions）
         const arr = Array.isArray(item?.values) ? item.values : [];
         const v = arr[0]?.value;
         if (typeof v === 'number') insightValues[name] = v;
@@ -155,9 +171,9 @@ async function main(){
       }
     }
 
-    // followers_count は別エンドポイント
+     // followers_count は別エンドポイント（Configに含まれており、かつ上でAPIに投げていない場合のみ）
     let followersCount = null;
-    if (metrics.includes('followers_count')){
+    if (metrics.includes('followers_count') && !apiMetricsAll.includes('follower_count')){
       const u2 = new URL(`https://graph.facebook.com/${API_VER}/${igId}`);
       u2.searchParams.set('fields', 'followers_count');
       u2.searchParams.set('access_token', token);
