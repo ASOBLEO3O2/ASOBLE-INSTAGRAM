@@ -113,11 +113,19 @@ async function main(){
 
   for (const a of accounts){
     const norm = normalizeAccount(a);
-    const handle = norm.handle;
-    const igId   = norm.igId;
-    // 優先順位: 明示 token → 環境変数 PAGE_TOKEN_{HANDLE_UPPER}
-    const envKey = `PAGE_TOKEN_${String(handle||'').toUpperCase().replace(/[^A-Z0-9]+/g,'_')}`;
-    const token  = norm.token || envOr({}, 'token', envKey);
+    const handle =
+      a.handle || a.account || a.username || a.name || a.store || a.page || (typeof a === 'string' ? a : null);
+
+    // IG ID / TOKEN は Secrets（環境変数）から取得
+    const envKeyId = `IG_ID_${String(handle||'').toUpperCase().replace(/[^A-Z0-9]+/g,'_')}`;
+    const envKeyTk = `PAGE_TOKEN_${String(handle||'').toUpperCase().replace(/[^A-Z0-9]+/g,'_')}`;
+    const igId   = process.env[envKeyId]  || null;
+    const token  = process.env[envKeyTk]  || null;
+
+    if (!handle || !igId || !token){
+      console.error(`[skip] missing field(s): handle=${handle}, igId=${igId}, token=${!!token}`);
+      continue;
+    }
     if (!handle || !igId || !token){
       let snippet;
       try { snippet = JSON.stringify(norm.raw).slice(0, 200); } catch { snippet = String(norm.raw); }
