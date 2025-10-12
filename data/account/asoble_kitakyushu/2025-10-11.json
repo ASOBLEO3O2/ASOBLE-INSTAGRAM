@@ -1,9 +1,12 @@
 {
   "date": "2025-10-11",
-  "generated_at": "2025-10-12T15:40:51.482+09:00",
+  "generated_at": "2025-10-12T16:49:20.895+09:00",
   "account": "asoble_kitakyushu",
   "source": "ig_graph_v23.0",
   "metrics": {
-    "followers_count": null
+    "reach": 0,
+    "profile_views": 0,
+    "accounts_engaged": 0,
+    "followers_count": 2114
   }
 }
