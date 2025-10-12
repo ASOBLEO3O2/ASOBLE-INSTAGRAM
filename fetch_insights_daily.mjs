@@ -67,6 +67,29 @@ function envOr(obj, key, fallbackEnv){
   return null;
 }
 
+// accounts.json の1件を正規化（オブジェクト/配列どちらでもOKに）
+function normalizeAccount(a){
+  // 1) オブジェクト型：既存の受け口拡張（A適用相当）
+  if (a && typeof a === 'object' && !Array.isArray(a)) {
+    const handle = a.handle || a.account || a.username || a.name || a.store || a.page;
+    const igId   = a.igId || a.igID || a.instagram_id || a.id || a['ig-id'];
+    const token  = a.token || a.page_token || a.access_token;
+    return { handle, igId, token, raw: a };
+  }
+  // 2) 配列型：位置・中身から推定（[handle, igId, token] などを想定）
+  if (Array.isArray(a)) {
+    let handle = null, igId = null, token = null;
+    for (const v of a) {
+      if (!handle && typeof v === 'string' && /[@A-Za-z_]/.test(v) && v.length <= 64) handle = v;
+      if (!igId && (typeof v === 'number' || (typeof v === 'string' && /^\d{8,}$/.test(v)))) igId = String(v);
+      if (!token && typeof v === 'string' && (v.includes('.') || v.length > 40)) token = v;
+    }
+    return { handle, igId, token, raw: a };
+  }
+  // 3) それ以外は未対応
+  return { handle: null, igId: null, token: null, raw: a };
+}
+
 async function main(){
   const metricsConf = await readJson('config/insights.metrics.json'); // { period:"day", metrics:[...] }
   const period = metricsConf?.period || 'day';
@@ -81,18 +104,16 @@ async function main(){
   const generatedAt = nowIsoJst();
 
   for (const a of accounts){
-    // handle: handle | account | username | name | store | page
-    const handle =
-      a.handle || a.account || a.username || a.name || a.store || a.page;
-    // igId: igId | igID | instagram_id | id | ['ig-id']
-    const igId =
-      a.igId || a.igID || a.instagram_id || a.id || a['ig-id'];
-    // token: token | page_token | access_token | 環境変数
+    const norm = normalizeAccount(a);
+    const handle = norm.handle;
+    const igId   = norm.igId;
+    // 優先順位: 明示 token → 環境変数 PAGE_TOKEN_{HANDLE_UPPER}
     const envKey = `PAGE_TOKEN_${String(handle||'').toUpperCase().replace(/[^A-Z0-9]+/g,'_')}`;
-    const token  = a.token || a.page_token || a.access_token || envOr(a, 'token', envKey);
+    const token  = norm.token || envOr({}, 'token', envKey);
     if (!handle || !igId || !token){
-      const keys = Object.keys(a||{});
-      console.error(`[skip] missing field(s) → handle=${handle}, igId=${igId}, token=${!!token} / keys=${keys.join(',')}`);
+      let snippet;
+      try { snippet = JSON.stringify(norm.raw).slice(0, 200); } catch { snippet = String(norm.raw); }
+      console.error(`[skip] missing field(s) → handle=${handle}, igId=${igId}, token=${!!token} / raw=${snippet}`);
       continue;
     }
 
