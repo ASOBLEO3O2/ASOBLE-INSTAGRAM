@@ -1,0 +1,47 @@
+name: Fetch Instagram (daily insights)
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    # 毎日 00:10 UTC（= JST 09:10）
+    - cron: "10 0 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-daily:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "18" }
+
+      - name: Run daily insights fetch
+        env:
+          # 例: リポジトリの Secrets に各店舗のページトークンを設定してください。
+          # PAGE_TOKEN_ASOBLE_KITAKYUSHU: ${{ secrets.PAGE_TOKEN_ASOBLE_KITAKYUSHU }}
+          # PAGE_TOKEN_ASOBLE_HONAMI:     ${{ secrets.PAGE_TOKEN_ASOBLE_HONAMI }}
+          # ...
+          PAGE_TOKEN_ASOBLE_KITAKYUSHU: ${{ secrets.PAGE_TOKEN_ASOBLE_KITAKYUSHU }}
+          PAGE_TOKEN_ASOBLE_HONAMI: ${{ secrets.PAGE_TOKEN_ASOBLE_HONAMI }}
+          PAGE_TOKEN_ASOBLE_YUMEGAOKA: ${{ secrets.PAGE_TOKEN_ASOBLE_YUMEGAOKA }}
+          PAGE_TOKEN_KININAL_ASOBLE_IRISO: ${{ secrets.PAGE_TOKEN_KININAL_ASOBLE_IRISO }}
+          PAGE_TOKEN_ASOBLE_OHMEOTSU: ${{ secrets.PAGE_TOKEN_ASOBLE_OHMEOTSU }}
+        run: |
+          node fetch_insights_daily.mjs
+
+      - name: Commit & push (skip if no changes)
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A data/insights
+          if git diff --cached --quiet; then
+            echo "no changes to push"
+            exit 0
+          fi
+          git commit -m "chore: update daily insights [skip ci]"
+          git push
