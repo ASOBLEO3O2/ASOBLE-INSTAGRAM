@@ -11,6 +11,24 @@ import { dirname, join } from 'node:path';
 
 const API_VER = 'v23.0';
 
+function pad(n){return String(n).padStart(2,'0');}
+function toJstDate(d=new Date()){
+  const utc = d.getTime();
+  const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
+  const jstNow = new Date(utc + JST_OFFSET_MS);
+  jstNow.setDate(jstNow.getDate() - 1);
+  const y = jstNow.getUTCFullYear();
+  const m = jstNow.getUTCMonth() + 1;
+  const day = jstNow.getUTCDate();
+  return `${y}-${pad(m)}-${pad(day)}`;
+}
+
+// JST基準で1日前の範囲をUNIX秒に換算
+const targetDate = toJstDate();
+const since = Math.floor(new Date(`${targetDate}T00:00:00+09:00`).getTime()/1000);
+const until = Math.floor(new Date(`${targetDate}T23:59:59+09:00`).getTime()/1000);
+console.log('[debug] JST prev-day target:', targetDate, {since, until});
+
 function pad(n){ return String(n).padStart(2,'0'); }
 function toJstDate(d=new Date()){
   // 入力Date(UTC内部)をJSTオフセットで見做して「前日」を返す
