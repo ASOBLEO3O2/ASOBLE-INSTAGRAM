@@ -1,0 +1,11 @@
+{
+  "period": "day",
+  "metrics": [
+    "reach",
+    "impressions",
+    "profile_views",
+    "accounts_engaged",
+    "followers_count"
+  ],
+  "notes": "基準=現行日次JSON（impressionsのみ不足→追加）。JST基準の前日分を収集。2025-10-12確定。"
+}
