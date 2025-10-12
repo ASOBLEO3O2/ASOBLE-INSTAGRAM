@@ -172,6 +172,14 @@ async function main(){
       url.searchParams.set('until', until);
       url.searchParams.set('access_token', token);
       const json = await fetchJson(url.toString());
+      // --- debug (opt-in by DEBUG_INSIGHTS=1) ---
+      if (process.env.DEBUG_INSIGHTS === '1') {
+        const meta = `metrics=[${metricsForInsights.join(',')}] metric_type=${needsTotal?'total_value':'(none)'} handle=${handle} date=${date}`;
+        let snippet = '';
+        try { snippet = JSON.stringify(json); } catch { snippet = String(json); }
+        if (snippet.length > 800) snippet = snippet.slice(0, 800) + '…';
+        console.log(`[debug] insights ${meta} raw=${snippet}`);
+      }
       // data: [{name, period, values:[{value, end_time}], title, id}, ...]
       for (const item of (json?.data||[])){
         const name = fromApi(item?.name); // 旧名へ戻す（例：content_views→impressions）
