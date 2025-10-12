@@ -140,7 +140,8 @@ async function main(){
     };
 
     const [y, m, d] = date.split('-');
-    const outPath = join('data','insights',handle,'daily', y, m, `${d}.json`);
+    // 既存成果物に合わせる場合はこちら（insights→account）
+    const outPath = join('data','account',handle, `${y}-${m}-${d}.json`);
     await ensureDir(dirname(outPath));
     await writeFile(outPath, JSON.stringify(out, null, 2) + '\n', 'utf8');
     console.log(`[ok] ${handle} -> ${outPath}`);
