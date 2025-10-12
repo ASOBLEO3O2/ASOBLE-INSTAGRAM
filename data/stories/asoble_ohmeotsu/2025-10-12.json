@@ -1,9 +1,15 @@
 {
   "date": "2025-10-12",
-  "generated_at": "2025-10-12T12:34:06.913+09:00",
+  "generated_at": "2025-10-12T15:28:03.308+09:00",
   "account": "asoble_ohmeotsu",
   "source": "ig_graph_v23.0",
   "items": [
+    {
+      "id": "17844026871582410",
+      "permalink": "https://instagram.com/stories/asoble_ohmeotsu/3741523685266798181",
+      "timestamp": "2025-10-12T04:46:40+0000",
+      "metrics": {}
+    },
     {
       "id": "18087570946921984",
       "permalink": "https://instagram.com/stories/asoble_ohmeotsu/3741483036060483641",
@@ -14,12 +20,6 @@
       "id": "18088652410860704",
       "permalink": "https://instagram.com/stories/asoble_ohmeotsu/3741478143312621015",
       "timestamp": "2025-10-12T03:16:09+0000",
-      "metrics": {}
-    },
-    {
-      "id": "18358057225090281",
-      "permalink": "https://instagram.com/stories/asoble_ohmeotsu/3740845315935824829",
-      "timestamp": "2025-10-11T06:18:52+0000",
       "metrics": {}
     }
   ]
