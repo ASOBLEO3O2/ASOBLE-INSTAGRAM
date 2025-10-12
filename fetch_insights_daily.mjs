@@ -169,6 +169,7 @@ async function main(){
       ));
       if (needsTotal) url.searchParams.set('metric_type', 'total_value');
       url.searchParams.set('period', period);
+      url.searchParams.set('since', since);
       url.searchParams.set('until', until);
       url.searchParams.set('access_token', token);
       const json = await fetchJson(url.toString());
