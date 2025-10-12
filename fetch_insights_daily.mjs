@@ -161,7 +161,6 @@ async function main(){
       ));
       if (needsTotal) url.searchParams.set('metric_type', 'total_value');
       url.searchParams.set('period', period);
-      url.searchParams.set('period', period);
       url.searchParams.set('since', since);
       url.searchParams.set('until', until);
       url.searchParams.set('access_token', token);
@@ -185,14 +184,12 @@ async function main(){
       u2.searchParams.set('fields', 'followers_count');
       u2.searchParams.set('access_token', token);
       const j2 = await fetchJson(u2.toString());
-      // v23互換：基本は followers_count、万一 follower_count が来ても拾う
+      // 安全に数値化（followers_count を優先、万一 follower_count が来ても拾う）
       let fcRaw = null;
       if (j2 && typeof j2 === 'object') {
-        if (Object.prototype.hasOwnProperty.call(j2, 'followers_count')) {
-          fcRaw = j2.followers_count;
-        } else if (Object.prototype.hasOwnProperty.call(j2, 'follower_count')) {
-          fcRaw = j2.follower_count;
-        }
+        fcRaw = (j2.followers_count !== undefined) ? j2.followers_count
+              : (j2.follower_count !== undefined)  ? j2.follower_count
+              : null;
       }
       const fcNum = Number(fcRaw);
       followersCount = Number.isFinite(fcNum) ? fcNum : 0;
