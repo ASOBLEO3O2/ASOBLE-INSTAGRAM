@@ -183,7 +183,7 @@ async function main(){
       const json = await fetchJson(url.toString());
       // --- debug (opt-in by DEBUG_INSIGHTS=1) ---
       if (process.env.DEBUG_INSIGHTS === '1') {
-        const meta = `metrics=[${metricsForInsights.join(',')}] metric_type=${needsTotal?'total_value':'(none)'} handle=${handle} date=${date}`;
+        const meta = `metrics=[${metricsForInsights.join(',')}] metric_type=${needsTotal?'total_value':'(none)'} handle=${handle}`;
         let snippet = '';
         try { snippet = JSON.stringify(json); } catch { snippet = String(json); }
         if (snippet.length > 800) snippet = snippet.slice(0, 800) + '…';
