@@ -1,0 +1,69 @@
+name: Fetch Instagram (posts & reels daily)
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "20 0 * * *"  # UTC 00:20 (= JST 09:20)
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-daily:
+    strategy:
+      matrix:
+        env: [KITAKYUSHU, HONAMI, YUMEGAOKA, IRISO, OHTU, SAGAMIHARA]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: ${{ matrix.env }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "18" }
+
+      - name: Preflight (skip Sagamihara)
+        id: gate
+        run: |
+          if [ "${{ matrix.env }}" = "SAGAMIHARA" ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install deps
+        if: steps.gate.outputs.skip == 'false'
+        run: |
+          npm ci --ignore-scripts || npm i --ignore-scripts
+
+      - name: Fetch posts (daily)
+        if: steps.gate.outputs.skip == 'false'
+        run: |
+          node scripts/fetch_posts.mjs \
+            --ig-id "${{ secrets.IG_ID }}" \
+            --token "${{ secrets.FB_PAGE_TOKEN }}" \
+            --store "${{ matrix.env }}" \
+            --out "data/posts/${{ matrix.env }}"
+
+      - name: Fetch reels (daily)
+        if: steps.gate.outputs.skip == 'false'
+        run: |
+          node scripts/fetch_reels.mjs \
+            --ig-id "${{ secrets.IG_ID }}" \
+            --token "${{ secrets.FB_PAGE_TOKEN }}" \
+            --store "${{ matrix.env }}" \
+            --out "data/reels/${{ matrix.env }}"
+
+      - name: Commit & push (if changed)
+        if: steps.gate.outputs.skip == 'false'
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A data/posts data/reels
+          if git diff --cached --quiet; then
+            echo "no changes to push"
+            exit 0
+          fi
+          git commit -m "chore: update posts/reels (daily) [skip ci]"
+          git push
