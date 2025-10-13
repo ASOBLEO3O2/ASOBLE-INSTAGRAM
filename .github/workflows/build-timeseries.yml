@@ -1,0 +1,109 @@
+--- /dev/null
++++ b/.github/workflows/build-timeseries.yml
+@@
+name: Build Instagram timeseries (daily)
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "35 0 * * *"  # UTC 00:35 (= JST 09:35) 収集後
+
+permissions:
+  contents: write
+
+jobs:
+  build-store:
+    strategy:
+      matrix:
+        env: [KITAKYUSHU, HONAMI, YUMEGAOKA, IRISO, OHTU, SAGAMIHARA]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: ${{ matrix.env }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: "18" }
+
+      - name: Preflight (skip Sagamihara)
+        id: gate
+        run: |
+          if [ "${{ matrix.env }}" = "SAGAMIHARA" ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build timeseries for store
+        if: steps.gate.outputs.skip == 'false'
+        run: |
+          node scripts/build_timeseries.mjs \
+            --store "${{ matrix.env }}"
+
+      - name: Commit & push (store)
+        if: steps.gate.outputs.skip == 'false'
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git checkout -B main
+          git add -A data/timeseries
+          if git diff --cached --quiet; then
+            echo "no changes to push"
+            exit 0
+          fi
+          git commit -m "chore: rebuild timeseries for ${{ matrix.env }} [skip ci]"
+          n=0
+          until [ $n -ge 5 ]; do
+            git fetch origin main
+            git pull --rebase origin main || true
+            if git push origin main; then
+              echo "pushed on attempt $((n+1))"
+              break
+            fi
+            n=$((n+1))
+            echo "push retry $n"
+            sleep 3
+          done
+
+  build-all:
+    needs: build-store
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: "18" }
+
+      - name: Build ALL timeseries
+        run: |
+          node scripts/build_timeseries.mjs --store "ALL"
+
+      - name: Commit & push (ALL)
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git checkout -B main
+          git add -A data/timeseries/ALL.json
+          if git diff --cached --quiet; then
+            echo "no changes to push"
+            exit 0
+          fi
+          git commit -m "chore: rebuild timeseries ALL [skip ci]"
+          n=0
+          until [ $n -ge 5 ]; do
+            git fetch origin main
+            git pull --rebase origin main || true
+            if git push origin main; then
+              echo "pushed on attempt $((n+1))"
+              break
+            fi
+            n=$((n+1))
+            echo "push retry $n"
+            sleep 3
+          done
