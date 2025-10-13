@@ -12,6 +12,7 @@ jobs:
   fetch-stories:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    environment: ${{ matrix.store }}
     strategy:
       matrix:
         store: [KITAKYUSHU, HONAMI, YUMEGAOKA, IRISO, OHTU, SAGAMIHARA]
@@ -22,9 +23,7 @@ jobs:
 
       - name: Run collector (stories_insights_periodic)
         env:
-          FB_PAGE_TOKEN: ${{ secrets[format('PAGE_TOKEN_%s', matrix.store)] }}
-          IG_ID:      ${{ secrets[format('IG_ID_%s',       matrix.store)] }}
-          STORE:      ${{ matrix.store }}
+          STORE: ${{ matrix.store }}
         run: node scripts/collectors/stories_insights_periodic.mjs
 
       - name: Commit & push if changed
