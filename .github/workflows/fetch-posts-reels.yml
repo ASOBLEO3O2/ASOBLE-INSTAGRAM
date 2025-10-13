@@ -19,6 +19,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with: { node-version: "18" }
 
@@ -60,12 +62,26 @@ jobs:
           set -euo pipefail
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # ensure full history & branch context
           git fetch origin main
-          git rebase origin/main
+          git checkout -B main
+          # stage changes
           git add -A data/posts data/reels
           if git diff --cached --quiet; then
             echo "no changes to push"
             exit 0
           fi
           git commit -m "chore: update posts/reels (daily) [skip ci]"
-          git push
+          # rebase & push with retries (matrix races safe)
+          n=0
+          until [ $n -ge 5 ]; do
+            git fetch origin main
+            git pull --rebase origin main || true
+            if git push origin main; then
+              echo "pushed on attempt $((n+1))"
+              break
+            fi
+            n=$((n+1))
+            echo "push retry $n"
+            sleep 3
+          done
