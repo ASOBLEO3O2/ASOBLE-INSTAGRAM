@@ -23,7 +23,13 @@ jobs:
 
       - name: Run collector (stories_insights_periodic)
         env:
+        # STORE はそのまま渡す
           STORE: ${{ matrix.store }}
+          # --- トークン/ID を明示注入（環境Secret/Repo Secret両対応）---
+          # 環境に FB_PAGE_TOKEN / IG_ID があればそれを、無ければリポジトリSecretsの {STORE} 付きを使用
+          FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
+          PAGE_TOKEN:    ${{ secrets[format('PAGE_TOKEN_%s',  matrix.store)] }}
+          IG_ID:         ${{ secrets.IG_ID || secrets[format('IG_ID_%s', matrix.store)] }} 
         run: node scripts/collectors/stories_insights_periodic.mjs
 
       - name: Commit & push if changed
