@@ -23,7 +23,7 @@ jobs:
 
       - name: Run collector (stories_insights_periodic)
         env:
-          PAGE_TOKEN: ${{ secrets[format('PAGE_TOKEN_%s', matrix.store)] }}
+          FB_PAGE_TOKEN: ${{ secrets[format('PAGE_TOKEN_%s', matrix.store)] }}
           IG_ID:      ${{ secrets[format('IG_ID_%s',       matrix.store)] }}
           STORE:      ${{ matrix.store }}
         run: node scripts/collectors/stories_insights_periodic.mjs
