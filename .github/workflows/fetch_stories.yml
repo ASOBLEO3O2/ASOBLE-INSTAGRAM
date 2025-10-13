@@ -14,8 +14,7 @@ jobs:
     timeout-minutes: 10
     strategy:
       matrix:
-        store: [KITAKYUSHU, HONAMI, YUMEGAOKA, IRISO, OHTSU, SAGAMIHARA]
-
+        store: [KITAKYUSHU, HONAMI, YUMEGAOKA, IRISO, OHTU, SAGAMIHARA]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
