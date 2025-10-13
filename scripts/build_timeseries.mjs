@@ -1,6 +1,3 @@
---- /dev/null
-+++ b/scripts/build_timeseries.mjs
-@@
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
