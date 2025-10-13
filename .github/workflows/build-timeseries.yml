@@ -1,6 +1,3 @@
---- /dev/null
-+++ b/.github/workflows/build-timeseries.yml
-@@
 name: Build Instagram timeseries (daily)
 
 on:
