@@ -36,6 +36,7 @@ async function fetchStoryInsights(id){
 }
 
 async function main(){
+  const STORE = process.env.STORE || await getUsername();
   const username = await getUsername();
   const stories = await fetchActiveStories(50);
   const items = [];
@@ -43,14 +44,26 @@ async function main(){
     const metrics = await fetchStoryInsights(s.id);
     items.push({ id:s.id, permalink:s.permalink, timestamp:s.timestamp, metrics });
   }
-  const date = ymdJST();
-  const payload = { date, generated_at: isoJST(), account: username, source:'ig_graph_v23.0', items };
+  // UTC日時をファイル名化（例: 2025-10-13T06.json）
+  const now = new Date();
+  const isoUTC = now.toISOString().slice(0,13); // YYYY-MM-DDTHH
+  const fileName = `${isoUTC}.json`;
 
-  const outDir = path.join('data','stories', username);
+  const payload = {
+    store: STORE,
+    fetched_at_utc: new Date().toISOString(),
+    fetched_at_jst: new Date(Date.now() + 9*3600*1000).toISOString().replace('Z','+09:00'),
+    source: 'ig_graph_v23.0',
+    granularity: 'hourly',
+    version: 'v1',
+    items
+  };
+
+  const outDir = path.join('data','account', STORE, 'stories');
   await ensureDir(outDir);
-  const outPath = path.join(outDir, `${date}.json`);
+  const outPath = path.join(outDir, fileName);
   const changed = await writeJsonPretty(outPath, payload);
-  console.log(`stories_insights_periodic: ${changed?'updated':'nochange'} ${outPath}`);
+  console.log(`[stories] ${STORE}: ${changed ? 'updated' : 'nochange'} -> ${outPath}`);
 }
 
 main().catch(e=>{ console.error(e); process.exit(1); });
