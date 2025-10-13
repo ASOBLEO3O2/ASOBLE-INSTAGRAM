@@ -190,15 +190,16 @@ async function main(){
         if (snippet.length > 800) snippet = snippet.slice(0, 800) + '…';
         console.log(`[debug] insights ${meta} raw=${snippet}`);
       }
-      // data: [{name, period, values:[{value, end_time}], title, id}, ...]
+      // data: [{name, period, total_value:{value}, values:[{value,end_time}], ...}]
       for (const item of (json?.data||[])){
-        const name = fromApi(item?.name); // 旧名へ戻す（例：content_views→impressions）
-        const arr = Array.isArray(item?.values) ? item.values : [];
-        const val = arr[0];
+        const name = fromApi(item?.name);
         let n = 0;
-        if (val) {
-          if (typeof val.value === 'number') n = val.value;
-          else if (val.total_value && typeof val.total_value.value === 'number') n = val.total_value.value;
+        // v23 の一部メトリクスは values を返さず total_value のみ
+        if (item?.total_value && typeof item.total_value.value === 'number') {
+          n = item.total_value.value;
+        } else {
+          const v0 = Array.isArray(item?.values) ? item.values[0] : undefined;
+          if (v0 && typeof v0.value === 'number') n = v0.value;
         }
         insightValues[name] = Number.isFinite(n) ? n : 0;
       }
