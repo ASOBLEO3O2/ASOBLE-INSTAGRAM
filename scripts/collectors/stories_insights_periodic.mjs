@@ -3,9 +3,11 @@ import { callGraph } from '../core/graph.js';
 import { ensureDir, writeJsonPretty } from '../core/save.js';
 import { isoJST, ymdJST } from '../core/time.js';
 
-const TOKEN = process.env.FB_PAGE_TOKEN;
-const IG_ID = process.env.IG_ID;
 const STORE = (process.env.STORE || '').toUpperCase();
+const dynIdKey = `IG_ID_${STORE}`;
+const dynTkKey = `PAGE_TOKEN_${STORE}`;
+const TOKEN = process.env.FB_PAGE_TOKEN || process.env.PAGE_TOKEN || process.env[dynTkKey] || null;
+const IG_ID = process.env.IG_ID || process.env[dynIdKey] || null;
 // 一時対応: 相模原のみはSecrets欠落でもスキップ（成功扱い）
 if ((!TOKEN || !IG_ID) && STORE === 'SAGAMIHARA') {
   console.warn('[stories] skip SAGAMIHARA (missing token or id)');
@@ -13,7 +15,7 @@ if ((!TOKEN || !IG_ID) && STORE === 'SAGAMIHARA') {
 }
 // 他店舗は従来どおり厳格終了
 if (!TOKEN || !IG_ID) {
-  console.error(`FB_PAGE_TOKEN or IG_ID is missing for ${STORE || 'UNKNOWN'}`);
+  console.error(`FB_PAGE_TOKEN/PAGE_TOKEN or IG_ID is missing for ${STORE || 'UNKNOWN'}`);
   process.exit(1);
 }
 
