@@ -5,7 +5,19 @@ import { isoJST, ymdJST } from '../core/time.js';
 
 const TOKEN = process.env.FB_PAGE_TOKEN;
 const IG_ID = process.env.IG_ID;
-if (!TOKEN || !IG_ID) { console.error('FB_PAGE_TOKEN or IG_ID is missing.'); process.exit(1); }
+const STORE = process.env.STORE || '';
+
+// 相模原は一時的にスキップ許可
+if ((!TOKEN || !IG_ID) && STORE.toUpperCase().includes('SAGAMIHARA')) {
+  console.warn(`[stories_insights_periodic] skip ${STORE} (missing token or id)`);
+  process.exit(0); // 成功扱いで終了
+}
+
+// 他の店舗は従来通り厳格チェック
+if (!TOKEN || !IG_ID) {
+  console.error(`FB_PAGE_TOKEN or IG_ID is missing for ${STORE || 'unknown store'}`);
+  process.exit(1);
+}
 
 async function getUsername(){
   const j = await callGraph(`/${IG_ID}`, { fields:'username' }, { token:TOKEN });
