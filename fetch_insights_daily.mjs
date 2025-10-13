@@ -111,6 +111,7 @@ async function main(){
   const generatedAt = nowIsoJst();
   const utcNow = new Date();
   utcNow.setUTCDate(utcNow.getUTCDate() - 1);
+  const date = utcNow.toISOString().slice(0,10);
   const sinceSec = Math.floor(utcNow.setUTCHours(0,0,0,0) / 1000);
   const untilSec = sinceSec + 86400 - 1;
 
