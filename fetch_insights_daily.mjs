@@ -107,9 +107,17 @@ async function main(){
   const accounts = (await readJson('accounts.json'))?.accounts || [];
   if (!accounts.length) throw new Error('accounts.json: accounts empty');
 
-  const date = toJstDate();
-  const since = date, until = date;
+   // --- UTC基準で前日範囲を計算 ---
   const generatedAt = nowIsoJst();
+  const utcNow = new Date();
+  utcNow.setUTCDate(utcNow.getUTCDate() - 1);
+  const sinceSec = Math.floor(utcNow.setUTCHours(0,0,0,0) / 1000);
+  const untilSec = sinceSec + 86400 - 1;
+
+  // デバッグ時のみ出力（DEBUG_INSIGHTS=1）
+  if (process.env.DEBUG_INSIGHTS === '1') {
+    console.log('[debug] UTC range', { sinceSec, untilSec });
+  }
 
   // 旧名 <-> API名 の互換マッピング（insights用）
   const ALIAS = {
@@ -169,8 +177,8 @@ async function main(){
       ));
       if (needsTotal) url.searchParams.set('metric_type', 'total_value');
       url.searchParams.set('period', period);
-      url.searchParams.set('since', since);
-      url.searchParams.set('until', until);
+      url.searchParams.set('since', sinceSec);
+      url.searchParams.set('until', untilSec);
       url.searchParams.set('access_token', token);
       const json = await fetchJson(url.toString());
       // --- debug (opt-in by DEBUG_INSIGHTS=1) ---
