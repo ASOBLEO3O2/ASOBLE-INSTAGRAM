@@ -1,0 +1,14 @@
+{
+  "store": "OHTU",
+  "version": "v1",
+  "updated_at_jst": "2025-10-13",
+  "granularity": "daily",
+  "items": [
+    {
+      "date": "2025-10-13",
+      "posts_count": 0,
+      "reels_count": 0,
+      "stories_count": 1
+    }
+  ]
+}
