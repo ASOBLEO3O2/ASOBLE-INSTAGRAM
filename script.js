@@ -578,8 +578,16 @@ import { openDashboard } from './drawer/controller.js';
     drawMini('spark-posts',   take.map(r=>r.posts_count),   'Posts');
     drawMini('spark-reels',   take.map(r=>r.reels_count),   'Reels');
     drawMini('spark-stories', take.map(r=>r.stories_count), 'Stories');
-    // 右ドロワー：当日/前日
-    const $drawer = document.getElementById('insightDrawer'); if(!$drawer) return;
+      // 右ドロワー：当日/前日
+    const $drawer = document.getElementById('insightDrawer'); 
+    if(!$drawer) return;
+    // ALL 選択時はドロワーを閉じて終了（出っぱなし防止）
+    if (store === 'ALL') {
+      $drawer.classList.remove('is-open');
+      $drawer.hidden = true;
+      $drawer.innerHTML = '';
+      return;
+    }
     const todayJST = (()=>{ const t=Date.now()+9*3600e3; const d=new Date(t); const y=d.getUTCFullYear(),m=String(d.getUTCMonth()+1).padStart(2,'0'),dd=String(d.getUTCDate()).padStart(2,'0'); return `${y}-${m}-${dd}`; })();
     const yday = (d=>{ const dt=new Date(d); dt.setUTCDate(dt.getUTCDate()-1); const y=dt.getUTCFullYear(),m=String(dt.getUTCMonth()+1).padStart(2,'0'),dd=String(dt.getUTCDate()).padStart(2,'0'); return `${y}-${m}-${dd}`; })(new Date(Date.now()+9*3600e3).toISOString());
     const rowT = items.find(x=>x.date===todayJST) || {date:todayJST,posts_count:0,reels_count:0,stories_count:0};
