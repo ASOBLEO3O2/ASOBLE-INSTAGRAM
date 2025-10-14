@@ -19,8 +19,9 @@ import { openDashboard } from './drawer/controller.js';
     render(list);              // DOM生成
     applyCounts();             // ← DOM直後に必ず実行
     draw();
+     // === v1 Insights UI（ALLサマリー/店舗切替/右ドロワー） ===
+    await initInsightsUI();
     $openAll.addEventListener('click', () => openAll(list));
-
     $refresh?.addEventListener('click', async ()=>{
       await loadAllSeries(state.accounts);   // JSON再読込
       try { applyCounts(); } catch {}
@@ -495,3 +496,104 @@ import { openDashboard } from './drawer/controller.js';
     window.ASOBLE = Object.assign(window.ASOBLE || {}, { state });
   }
   })();
+  // === v1 Insights — functions (append-only) ===
+  async function initInsightsUI(){
+    const STORES = ['ALL','KITAKYUSHU','HONAMI','IRISO','OHTU','YUMEGAOKA']; // 相模原除外
+    const $sel = document.getElementById('storeSelect');
+    if ($sel && !$sel.options.length){
+      STORES.forEach(s=>{
+        const o=document.createElement('option'); o.value=s; o.textContent=s; $sel.appendChild(o);
+      });
+      // URLハッシュ (#store=HONAMI) の復元
+      const m = location.hash.match(/store=([A-Z_]+)/);
+      const initStore = m ? m[1] : 'ALL';
+      $sel.value = STORES.includes(initStore)?initStore:'ALL';
+      // 初期描画
+      await renderSummary();           // ALL.json 当日値
+      await renderStore($sel.value);   // 店舗スパーク＋右ドロワー
+      // 変更時
+      $sel.addEventListener('change', async ()=>{
+        const v = $sel.value;
+        history.replaceState(null,'',`#store=${encodeURIComponent(v)}`);
+        await renderStore(v);
+      });
+    } else {
+      // セレクタが無くてもサマリーだけは描画
+      await renderSummary();
+    }
+  }
+
+  async function loadTimeseries(name){
+    const key = `ts:${name}`;
+    const cached = sessionStorage.getItem(key);
+    if (cached){ try{ return JSON.parse(cached); }catch{} }
+    try{
+      const r = await fetch(`./data/timeseries/${name}.json`, { cache:'no-cache' });
+      if (!r.ok) return { items: [] };
+      const data = await r.json(); // v1期待: { items:[{date,posts_count,reels_count,stories_count}, ...] }
+      sessionStorage.setItem(key, JSON.stringify(data||{items:[]}));
+      return data || { items: [] };
+    }catch{ return { items: [] }; }
+  }
+
+  async function renderSummary(){
+    const todayJST = (()=>{ const t=Date.now()+9*3600e3; const d=new Date(t); const y=d.getUTCFullYear(),m=String(d.getUTCMonth()+1).padStart(2,'0'),dd=String(d.getUTCDate()).padStart(2,'0'); return `${y}-${m}-${dd}`; })();
+    const all = await loadTimeseries('ALL');
+    const row = (all.items||[]).find(x=>x?.date===todayJST) || { posts_count:0, reels_count:0, stories_count:0 };
+    const set = (id,val)=>{ const el=document.getElementById(id); if(el) el.textContent = Number(val||0).toLocaleString(); };
+    set('summary-posts',   row.posts_count);
+    set('summary-reels',   row.reels_count);
+    set('summary-stories', row.stories_count);
+  }
+
+  async function renderStore(store){
+    const N=14; // 過去N日
+    const data = await loadTimeseries(store);
+    const items = Array.isArray(data.items)?data.items:[];
+    // 直近N日（JST日付のまま）を末尾から抽出
+    const take = items.slice(-N);
+    // スパーク（3本）
+    const drawMini = (id, arr, label)=>{
+      const cvs = document.getElementById(id); if(!cvs) return;
+      const ctx = cvs.getContext('2d'); const W=cvs.width, H=cvs.height;
+      ctx.clearRect(0,0,W,H);
+      const ys = arr.map(n=>Number(n)||0);
+      const xs = arr.map((_,i)=>i);
+      const xmin=0, xmax=Math.max(1,ys.length-1);
+      const ymin=Math.min(...ys,0), ymax=Math.max(...ys,1);
+      const x=t=> (t-xmin)/(xmax-xmin)*W;
+      const y=v=> H-( (v-ymin)/Math.max(1,(ymax-ymin))*H );
+      // ガイド
+      ctx.globalAlpha=.25; ctx.strokeStyle='#fff'; ctx.beginPath();
+      [0.25,0.5,0.75].forEach(p=>{ const yy=H*p; ctx.moveTo(0,yy); ctx.lineTo(W,yy);});
+      ctx.stroke(); ctx.globalAlpha=1;
+      // 折れ線
+      ctx.beginPath();
+      ys.forEach((v,i)=> i?ctx.lineTo(x(i),y(v)):ctx.moveTo(x(i),y(v)));
+      ctx.strokeStyle='#6ad1e3'; ctx.lineWidth=2; ctx.stroke();
+      // ラベル
+      ctx.font='12px system-ui,-apple-system,"Noto Sans JP",sans-serif';
+      ctx.fillStyle='#bcd'; ctx.fillText(`${store} — ${label}`, 6, 14);
+    };
+    drawMini('spark-posts',   take.map(r=>r.posts_count),   'Posts');
+    drawMini('spark-reels',   take.map(r=>r.reels_count),   'Reels');
+    drawMini('spark-stories', take.map(r=>r.stories_count), 'Stories');
+    // 右ドロワー：当日/前日
+    const $drawer = document.getElementById('insightDrawer'); if(!$drawer) return;
+    const todayJST = (()=>{ const t=Date.now()+9*3600e3; const d=new Date(t); const y=d.getUTCFullYear(),m=String(d.getUTCMonth()+1).padStart(2,'0'),dd=String(d.getUTCDate()).padStart(2,'0'); return `${y}-${m}-${dd}`; })();
+    const yday = (d=>{ const dt=new Date(d); dt.setUTCDate(dt.getUTCDate()-1); const y=dt.getUTCFullYear(),m=String(dt.getUTCMonth()+1).padStart(2,'0'),dd=String(dt.getUTCDate()).padStart(2,'0'); return `${y}-${m}-${dd}`; })(new Date(Date.now()+9*3600e3).toISOString());
+    const rowT = items.find(x=>x.date===todayJST) || {date:todayJST,posts_count:0,reels_count:0,stories_count:0};
+    const rowY = items.find(x=>x.date===yday)     || {date:yday,    posts_count:0,reels_count:0,stories_count:0};
+    $drawer.innerHTML = `
+      <h2>@${store} の内訳</h2>
+      <table class="table">
+        <thead><tr><th>date</th><th>posts</th><th>reels</th><th>stories</th></tr></thead>
+        <tbody>
+          <tr><td>${rowT.date}</td><td>${rowT.posts_count}</td><td>${rowT.reels_count}</td><td>${rowT.stories_count}</td></tr>
+          <tr><td>${rowY.date}</td><td>${rowY.posts_count}</td><td>${rowY.reels_count}</td><td>${rowY.stories_count}</td></tr>
+        </tbody>
+      </table>
+    `;
+    $drawer.hidden = false;
+    $drawer.classList.add('is-open');
+  }
