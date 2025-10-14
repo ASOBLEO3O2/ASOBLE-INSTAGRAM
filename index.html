@@ -58,8 +58,11 @@
     <!-- 全店合計カードは固定表示 -->
     <section id="cards" class="cards" aria-live="polite" style="position:relative;"></section>    
   </main>
-   <!-- 右ドロワー（当日/前日の内訳テーブル） - 引き出し型ハンドルを追加 -->
+  <!-- 右ドロワー（当日/前日の内訳テーブル） - 取っ手常時表示＋中身のみスライド -->
   <aside id="insightDrawer" class="drawer-insight" hidden aria-live="polite">
+    <div class="drawer-panel">
+      <div class="drawer-content"></div>
+    </div>
     <div class="drawer-handle" role="button" tabindex="0" aria-label="引き出す"></div>
   </aside>
   <!-- 右ドロワー（カード選択時に詳細を表示） -->
