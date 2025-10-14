@@ -5,7 +5,19 @@ export function renderDrawerView($dash, { handle, date, tab }){
   const isAll = (handle === 'ALL');
   const title = isAll ? '全店ダッシュボード' : `@${handle}`;
 
-  $dash.innerHTML = `
+  // 取っ手常時表示＆中身のみスライド：.drawer-panel > .drawer-content
+  // すでに骨組みがあれば再利用（取っ手を innerHTML で消さない）
+  if (!$dash.querySelector('.drawer-panel')) {
+    $dash.innerHTML = `
+      <div class="drawer-panel">
+        <div class="drawer-content"></div>
+      </div>
+      <div class="drawer-handle" role="button" tabindex="0" aria-label="引き出す"></div>
+    `;
+  }
+  const $content = $dash.querySelector('.drawer-content');
+  if (!$content) return;
+  $content.innerHTML = `
     <div class="drawer-head" style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
       <div>
         <div class="drawer-title" style="font-weight:700;font-size:18px;">${title}</div>
