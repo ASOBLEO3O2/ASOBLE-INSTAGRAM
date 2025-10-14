@@ -511,6 +511,7 @@ import { openDashboard } from './drawer/controller.js';
       // 初期描画
       await renderSummary();           // ALL.json 当日値
       await renderStore($sel.value);   // 店舗スパーク＋右ドロワー
+      initInsightDrawerDrag();         // ← 引き出し型ドロワーのドラッグ初期化
       // 変更時
       $sel.addEventListener('change', async ()=>{
         const v = $sel.value;
@@ -520,7 +521,79 @@ import { openDashboard } from './drawer/controller.js';
     } else {
       // セレクタが無くてもサマリーだけは描画
       await renderSummary();
+      initInsightDrawerDrag();
     }
+  }
+
+  // 引き出し型ドロワー：ドラッグで開閉（最小実装）
+  function initInsightDrawerDrag(){
+    const drawer = document.getElementById('insightDrawer');
+    if (!drawer) return;
+    const handle = drawer.querySelector('.drawer-handle');
+    let startX=0, basePx=0, width=0, dragging=false;
+
+    const onDown = (ev) => {
+      const e = ev.touches?.[0] || ev;
+      startX = e.clientX;
+      width  = drawer.getBoundingClientRect().width || 0;
+      // いま開いているなら 0px 基準、閉じているなら width 基準から開始
+      basePx = drawer.classList.contains('is-open') ? 0 : width;
+      dragging = true;
+      drawer.classList.add('is-dragging');
+      drawer.hidden = false; // ドラッグ開始で一時的に可視化
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp, { once:true });
+      window.addEventListener('touchmove', onMove, { passive:false });
+      window.addEventListener('touchend', onUp, { once:true });
+    };
+    const onMove = (ev) => {
+      if (!dragging) return;
+      const e = ev.touches?.[0] || ev;
+      const dx = startX - e.clientX;          // 左へ引くと正
+      let pos = Math.min(Math.max(basePx + dx, 0), width); // 0(open)〜width(closed)
+      drawer.style.transform = `translateX(${pos}px)`;
+      ev.preventDefault?.();
+    };
+    const onUp = () => {
+      if (!dragging) return;
+      dragging = false;
+      const m = drawer.style.transform.match(/translateX\(([-\d.]+)px\)/);
+      const pos = m ? Number(m[1]) : (drawer.classList.contains('is-open') ? 0 : width);
+      const threshold = width * 0.35; // 35%で開閉確定
+      drawer.classList.remove('is-dragging');
+      drawer.style.transform = ''; // 最終状態はCSSに委ねる
+      if (pos <= threshold){
+        drawer.classList.add('is-open');
+        drawer.hidden = false;
+      }else{
+        drawer.classList.remove('is-open');
+        drawer.hidden = true;
+      }
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('touchmove', onMove);
+    };
+    // 取っ手操作（PC/モバイル両対応）
+    if (handle){
+      handle.addEventListener('pointerdown', onDown);
+      handle.addEventListener('touchstart', onDown, { passive:true });
+      handle.addEventListener('click', () => {
+        // 単タップでトグル
+        const willOpen = !drawer.classList.contains('is-open');
+        drawer.classList.toggle('is-open', willOpen);
+        drawer.hidden = !willOpen;
+      });
+      handle.addEventListener('keydown', (e)=>{
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handle.click(); }
+      });
+    }
+    // ESCで閉じる
+    window.addEventListener('keydown', (e)=>{
+      if (e.key === 'Escape'){
+        drawer.classList.remove('is-open');
+        drawer.hidden = true;
+        drawer.style.transform = '';
+      }
+    });
   }
 
   async function loadTimeseries(name){
@@ -578,16 +651,19 @@ import { openDashboard } from './drawer/controller.js';
     drawMini('spark-posts',   take.map(r=>r.posts_count),   'Posts');
     drawMini('spark-reels',   take.map(r=>r.reels_count),   'Reels');
     drawMini('spark-stories', take.map(r=>r.stories_count), 'Stories');
-      // 右ドロワー：当日/前日
+
+    // 右ドロワー：当日/前日
     const $drawer = document.getElementById('insightDrawer'); 
     if(!$drawer) return;
-    // ALL 選択時はドロワーを閉じて終了（出っぱなし防止）
+    // === ALL 選択時はドロワーを確実に閉じて終了（出っぱなし防止） ===
     if (store === 'ALL') {
-      $drawer.classList.remove('is-open');
+      $drawer.classList.remove('is-open','is-dragging');
       $drawer.hidden = true;
-      $drawer.innerHTML = '';
+      $drawer.style.transform = '';
+      $drawer.innerHTML = ''; // 内容も消しておく
       return;
     }
+    
     const todayJST = (()=>{ const t=Date.now()+9*3600e3; const d=new Date(t); const y=d.getUTCFullYear(),m=String(d.getUTCMonth()+1).padStart(2,'0'),dd=String(d.getUTCDate()).padStart(2,'0'); return `${y}-${m}-${dd}`; })();
     const yday = (d=>{ const dt=new Date(d); dt.setUTCDate(dt.getUTCDate()-1); const y=dt.getUTCFullYear(),m=String(dt.getUTCMonth()+1).padStart(2,'0'),dd=String(dt.getUTCDate()).padStart(2,'0'); return `${y}-${m}-${dd}`; })(new Date(Date.now()+9*3600e3).toISOString());
     const rowT = items.find(x=>x.date===todayJST) || {date:todayJST,posts_count:0,reels_count:0,stories_count:0};
@@ -602,6 +678,7 @@ import { openDashboard } from './drawer/controller.js';
         </tbody>
       </table>
     `;
-    $drawer.hidden = false;
-    $drawer.classList.add('is-open');
+    // 開閉はドラッグ/取っ手操作に委ねる（自動では開かない）
+    // 既に開いていた場合は可視維持、閉じていれば閉じたまま
+    $drawer.hidden = $drawer.classList.contains('is-open') ? false : true;
   }
