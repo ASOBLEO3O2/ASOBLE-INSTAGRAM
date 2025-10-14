@@ -34,13 +34,19 @@ export function openDashboard(handle, state){
   // 初回描画
   renderTrend(state);
 
-  // 開く
-  $dash.hidden = false;
-  $dash.classList.add('is-open');
+  // 引き出し型：自動では開かない（取っ手は常時表示）
+  $dash.hidden = false;                 // 取っ手を見せる
+  if (state.target === 'ALL') {
+    // ALL指定時は閉状態維持（中身は更新可）
+    $dash.classList.remove('is-open','is-dragging');
+    const panel = $dash.querySelector('.drawer-panel');
+    if (panel) panel.style.transform = '';
+  }
 
   // イベント（重複バインド防止のため都度解除→再付与）
   hookDrawerEvents($dash, state);
   hookRangeRelay(state);
+　initDashboardDrag($dash); // ← ドラッグ初期化（多重バインド防止内蔵）
 }
 
 function renderTrend(state){
@@ -96,7 +102,9 @@ function hookDrawerEvents($dash, state){
   const $close = $dash.querySelector('.drawer-close');
   if ($close) $close.onclick = () => {
     $dash.classList.remove('is-open');
-    $dash.hidden = true;
+    $dash.hidden = false; // 取っ手は残す
+    const panel = $dash.querySelector('.drawer-panel');
+    if (panel) panel.style.transform = '';
   };
 }
 
@@ -139,4 +147,64 @@ function shiftDrawerDate(state, stepStr){
   if ($date) $date.value = state.drawer.date;
   const $dash = document.getElementById('dashboard');
   if ($dash) renderTrend(state);
+}
+
+
+// === 引き出し型：ドラッグで開閉（パネルのみ移動） ===
+function initDashboardDrag($dash){
+  if (!$dash || $dash.__dragInit) return; // 多重初期化防止
+  $dash.__dragInit = true;
+  const panel  = $dash.querySelector('.drawer-panel');
+  const handle = $dash.querySelector('.drawer-handle');
+  if (!panel || !handle) return;
+  let startX=0, basePx=0, width=0, dragging=false;
+  
+  const onDown = (ev) => {
+    const e = ev.touches?.[0] || ev;
+    startX = e.clientX;
+    width  = panel.getBoundingClientRect().width || 0;
+    basePx = $dash.classList.contains('is-open') ? 0 : width;
+    dragging = true;
+    $dash.classList.add('is-dragging');
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp, { once:true });
+    window.addEventListener('touchmove', onMove, { passive:false });
+    window.addEventListener('touchend', onUp, { once:true });
+  };
+  const onMove = (ev) => {
+    if (!dragging) return;
+    const e = ev.touches?.[0] || ev;
+    const dx = startX - e.clientX; // 左へ引くと正
+    const pos = Math.min(Math.max(basePx + dx, 0), width);
+    panel.style.transform = `translateX(${pos}px)`;
+    ev.preventDefault?.();
+  };
+  const onUp = () => {
+    if (!dragging) return;
+    dragging = false;
+    const m = panel.style.transform.match(/translateX\(([-\d.]+)px\)/);
+    const pos = m ? Number(m[1]) : ($dash.classList.contains('is-open') ? 0 : width);
+    const threshold = width*0.35;
+    $dash.classList.remove('is-dragging');
+    panel.style.transform = '';
+    if (pos <= threshold){
+      $dash.classList.add('is-open');
+    }else{
+      $dash.classList.remove('is-open');
+    }
+  };
+  handle.addEventListener('pointerdown', onDown);
+  handle.addEventListener('touchstart', onDown, { passive:true });
+  handle.addEventListener('click', ()=>{ // 単タップでトグル
+    const willOpen = !$dash.classList.contains('is-open');
+    $dash.classList.toggle('is-open', willOpen);
+    panel.style.transform = '';
+  });
+  // ESCで閉じる
+  window.addEventListener('keydown', (e)=>{
+    if (e.key === 'Escape'){
+      $dash.classList.remove('is-open');
+      panel.style.transform = '';
+    }
+  });
 }
