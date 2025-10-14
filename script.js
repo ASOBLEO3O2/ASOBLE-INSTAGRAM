@@ -511,7 +511,7 @@ import { openDashboard } from './drawer/controller.js';
       // 初期描画
       await renderSummary();           // ALL.json 当日値
       await renderStore($sel.value);   // 店舗スパーク＋右ドロワー
-      initInsightDrawerDrag();         // ← 引き出し型ドロワーのドラッグ初期化
+      initInsightDrawerDrag();         // 引き出し型ドロワーのドラッグ初期化
       // 変更時
       $sel.addEventListener('change', async ()=>{
         const v = $sel.value;
@@ -528,19 +528,20 @@ import { openDashboard } from './drawer/controller.js';
   // 引き出し型ドロワー：ドラッグで開閉（最小実装）
   function initInsightDrawerDrag(){
     const drawer = document.getElementById('insightDrawer');
-    if (!drawer) return;
-    const handle = drawer.querySelector('.drawer-handle');
+    
     let startX=0, basePx=0, width=0, dragging=false;
-
+    if (!drawer) return;
+    const panel  = drawer.querySelector('.drawer-panel');
+    const handle = drawer.querySelector('.drawer-handle');
     const onDown = (ev) => {
       const e = ev.touches?.[0] || ev;
       startX = e.clientX;
-      width  = drawer.getBoundingClientRect().width || 0;
+      width  = panel.getBoundingClientRect().width || 0;
       // いま開いているなら 0px 基準、閉じているなら width 基準から開始
       basePx = drawer.classList.contains('is-open') ? 0 : width;
       dragging = true;
       drawer.classList.add('is-dragging');
-      drawer.hidden = false; // ドラッグ開始で一時的に可視化
+      drawer.hidden = false; // 取っ手を常時表示するため基本false維持
       window.addEventListener('pointermove', onMove);
       window.addEventListener('pointerup', onUp, { once:true });
       window.addEventListener('touchmove', onMove, { passive:false });
@@ -551,23 +552,23 @@ import { openDashboard } from './drawer/controller.js';
       const e = ev.touches?.[0] || ev;
       const dx = startX - e.clientX;          // 左へ引くと正
       let pos = Math.min(Math.max(basePx + dx, 0), width); // 0(open)〜width(closed)
-      drawer.style.transform = `translateX(${pos}px)`;
+      panel.style.transform = `translateX(${pos}px)`;
       ev.preventDefault?.();
     };
     const onUp = () => {
       if (!dragging) return;
       dragging = false;
-      const m = drawer.style.transform.match(/translateX\(([-\d.]+)px\)/);
+      const m = panel.style.transform.match(/translateX\(([-\d.]+)px\)/);
       const pos = m ? Number(m[1]) : (drawer.classList.contains('is-open') ? 0 : width);
       const threshold = width * 0.35; // 35%で開閉確定
       drawer.classList.remove('is-dragging');
-      drawer.style.transform = ''; // 最終状態はCSSに委ねる
+      panel.style.transform = ''; // 最終状態はCSSに委ねる
       if (pos <= threshold){
         drawer.classList.add('is-open');
-        drawer.hidden = false;
+        drawer.hidden = false;   // 取っ手常時表示のため false のまま
       }else{
         drawer.classList.remove('is-open');
-        drawer.hidden = true;
+        drawer.hidden = false;   // 取っ手を見せるため drawer 自体は表示のまま
       }
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('touchmove', onMove);
@@ -590,8 +591,8 @@ import { openDashboard } from './drawer/controller.js';
     window.addEventListener('keydown', (e)=>{
       if (e.key === 'Escape'){
         drawer.classList.remove('is-open');
-        drawer.hidden = true;
-        drawer.style.transform = '';
+        drawer.hidden = false;     // 取っ手は残す
+        panel.style.transform = '';
       }
     });
   }
@@ -655,12 +656,14 @@ import { openDashboard } from './drawer/controller.js';
     // 右ドロワー：当日/前日
     const $drawer = document.getElementById('insightDrawer'); 
     if(!$drawer) return;
-    // === ALL 選択時はドロワーを確実に閉じて終了（出っぱなし防止） ===
+    const $content = $drawer.querySelector('.drawer-content');
+    // === ALL 選択時はドロワーを確実に閉じて終了（取っ手は残す） ===
     if (store === 'ALL') {
       $drawer.classList.remove('is-open','is-dragging');
-      $drawer.hidden = true;
-      $drawer.style.transform = '';
-      $drawer.innerHTML = ''; // 内容も消しておく
+      $drawer.hidden = false;                   // 取っ手は常時表示
+      const panel = $drawer.querySelector('.drawer-panel');
+      if (panel) panel.style.transform = '';    // rAFドラッグの一時値をリセット
+      if ($content) $content.innerHTML = '';    // 内容のみ消去
       return;
     }
     
@@ -668,17 +671,18 @@ import { openDashboard } from './drawer/controller.js';
     const yday = (d=>{ const dt=new Date(d); dt.setUTCDate(dt.getUTCDate()-1); const y=dt.getUTCFullYear(),m=String(dt.getUTCMonth()+1).padStart(2,'0'),dd=String(dt.getUTCDate()).padStart(2,'0'); return `${y}-${m}-${dd}`; })(new Date(Date.now()+9*3600e3).toISOString());
     const rowT = items.find(x=>x.date===todayJST) || {date:todayJST,posts_count:0,reels_count:0,stories_count:0};
     const rowY = items.find(x=>x.date===yday)     || {date:yday,    posts_count:0,reels_count:0,stories_count:0};
-    $drawer.innerHTML = `
-      <h2>@${store} の内訳</h2>
-      <table class="table">
-        <thead><tr><th>date</th><th>posts</th><th>reels</th><th>stories</th></tr></thead>
-        <tbody>
-          <tr><td>${rowT.date}</td><td>${rowT.posts_count}</td><td>${rowT.reels_count}</td><td>${rowT.stories_count}</td></tr>
-          <tr><td>${rowY.date}</td><td>${rowY.posts_count}</td><td>${rowY.reels_count}</td><td>${rowY.stories_count}</td></tr>
-        </tbody>
-      </table>
-    `;
-    // 開閉はドラッグ/取っ手操作に委ねる（自動では開かない）
-    // 既に開いていた場合は可視維持、閉じていれば閉じたまま
-    $drawer.hidden = $drawer.classList.contains('is-open') ? false : true;
+      if ($content){
+      $content.innerHTML = `
+        <h2>@${store} の内訳</h2>
+        <table class="table">
+          <thead><tr><th>date</th><th>posts</th><th>reels</th><th>stories</th></tr></thead>
+          <tbody>
+            <tr><td>${rowT.date}</td><td>${rowT.posts_count}</td><td>${rowT.reels_count}</td><td>${rowT.stories_count}</td></tr>
+            <tr><td>${rowY.date}</td><td>${rowY.posts_count}</td><td>${rowY.reels_count}</td><td>${rowY.stories_count}</td></tr>
+          </tbody>
+        </table>
+      `;
+    }
+    // 自動では開かない（現在の開閉状態を維持）
+    $drawer.hidden = false; // 取っ手常時表示
   }
