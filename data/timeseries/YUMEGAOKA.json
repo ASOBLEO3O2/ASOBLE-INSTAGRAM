@@ -1,7 +1,7 @@
 {
   "store": "YUMEGAOKA",
   "version": "v1",
-  "updated_at_jst": "2025-10-15",
+  "updated_at_jst": "2025-10-16",
   "granularity": "daily",
   "items": [
     {
@@ -20,7 +20,13 @@
       "date": "2025-10-15",
       "posts_count": 0,
       "reels_count": 0,
-      "stories_count": 3
+      "stories_count": 6
+    },
+    {
+      "date": "2025-10-16",
+      "posts_count": 0,
+      "reels_count": 0,
+      "stories_count": 1
     }
   ]
 }
