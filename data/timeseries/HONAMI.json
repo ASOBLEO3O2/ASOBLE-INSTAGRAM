@@ -1,7 +1,7 @@
 {
   "store": "HONAMI",
   "version": "v1",
-  "updated_at_jst": "2025-10-20",
+  "updated_at_jst": "2025-10-21",
   "granularity": "daily",
   "items": [
     {
@@ -50,7 +50,7 @@
       "date": "2025-10-20",
       "posts_count": 0,
       "reels_count": 0,
-      "stories_count": 1
+      "stories_count": 13
     }
   ]
 }
