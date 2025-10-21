@@ -1,0 +1,16 @@
+{
+  "store": "YUMEGAOKA",
+  "fetched_at_utc": "2025-10-21T18:30:10.989Z",
+  "fetched_at_jst": "2025-10-22T03:30:10.989+09:00",
+  "source": "ig_graph_v23.0",
+  "granularity": "hourly",
+  "version": "v1",
+  "items": [
+    {
+      "id": "17933529122983407",
+      "permalink": "https://instagram.com/stories/asoble_yumegaoka/3748229234205827578",
+      "timestamp": "2025-10-21T10:49:21+0000",
+      "metrics": {}
+    }
+  ]
+}
