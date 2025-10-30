@@ -1,0 +1,28 @@
+{
+  "store": "YUMEGAOKA",
+  "fetched_at_utc": "2025-10-30T03:43:17.711Z",
+  "fetched_at_jst": "2025-10-30T12:43:17.711+09:00",
+  "source": "ig_graph_v23.0",
+  "granularity": "hourly",
+  "version": "v1",
+  "items": [
+    {
+      "id": "18366846394080696",
+      "permalink": "https://instagram.com/stories/asoble_yumegaoka/3754101803983189119",
+      "timestamp": "2025-10-29T13:17:07+0000",
+      "metrics": {}
+    },
+    {
+      "id": "18319191727173007",
+      "permalink": "https://instagram.com/stories/asoble_yumegaoka/3754098850857662094",
+      "timestamp": "2025-10-29T13:11:14+0000",
+      "metrics": {}
+    },
+    {
+      "id": "17930239359000077",
+      "permalink": "https://instagram.com/stories/asoble_yumegaoka/3753957384424396046",
+      "timestamp": "2025-10-29T08:30:09+0000",
+      "metrics": {}
+    }
+  ]
+}
