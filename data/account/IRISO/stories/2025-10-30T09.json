@@ -1,0 +1,9 @@
+{
+  "store": "IRISO",
+  "fetched_at_utc": "2025-10-30T09:23:45.362Z",
+  "fetched_at_jst": "2025-10-30T18:23:45.362+09:00",
+  "source": "ig_graph_v23.0",
+  "granularity": "hourly",
+  "version": "v1",
+  "items": []
+}
