@@ -1,7 +1,7 @@
 {
   "store": "ALL",
   "version": "v1",
-  "updated_at_jst": "2025-11-03",
+  "updated_at_jst": "2025-11-04",
   "granularity": "daily",
   "items": [
     {
@@ -128,7 +128,13 @@
       "date": "2025-11-02",
       "posts_count": 0,
       "reels_count": 0,
-      "stories_count": 3
+      "stories_count": 31
+    },
+    {
+      "date": "2025-11-03",
+      "posts_count": 0,
+      "reels_count": 0,
+      "stories_count": 5
     }
   ]
 }
