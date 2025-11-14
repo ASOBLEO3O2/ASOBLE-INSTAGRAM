@@ -1,0 +1,16 @@
+{
+  "store": "HONAMI",
+  "fetched_at_utc": "2025-11-14T18:30:53.527Z",
+  "fetched_at_jst": "2025-11-15T03:30:53.527+09:00",
+  "source": "ig_graph_v23.0",
+  "granularity": "hourly",
+  "version": "v1",
+  "items": [
+    {
+      "id": "17976521132948494",
+      "permalink": "https://instagram.com/stories/asoble_honami/3765510488324275520",
+      "timestamp": "2025-11-14T07:04:09+0000",
+      "metrics": {}
+    }
+  ]
+}
