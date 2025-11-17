@@ -1,0 +1,22 @@
+{
+  "store": "OHTU",
+  "fetched_at_utc": "2025-11-17T01:46:29.225Z",
+  "fetched_at_jst": "2025-11-17T10:46:29.225+09:00",
+  "source": "ig_graph_v23.0",
+  "granularity": "hourly",
+  "version": "v1",
+  "items": [
+    {
+      "id": "18074932799186895",
+      "permalink": "https://instagram.com/stories/asoble_ohmeotsu/3766858310927121514",
+      "timestamp": "2025-11-16T03:42:02+0000",
+      "metrics": {}
+    },
+    {
+      "id": "18123556717457374",
+      "permalink": "https://instagram.com/stories/asoble_ohmeotsu/3766839720295354371",
+      "timestamp": "2025-11-16T03:05:03+0000",
+      "metrics": {}
+    }
+  ]
+}
