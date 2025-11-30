@@ -1,0 +1,46 @@
+{
+  "store": "OHTU",
+  "fetched_at_utc": "2025-11-30T06:32:56.761Z",
+  "fetched_at_jst": "2025-11-30T15:32:56.761+09:00",
+  "source": "ig_graph_v23.0",
+  "granularity": "hourly",
+  "version": "v1",
+  "items": [
+    {
+      "id": "18077837057177385",
+      "permalink": "https://instagram.com/stories/asoble_ohmeotsu/3777061766149248686",
+      "timestamp": "2025-11-30T05:34:28+0000",
+      "metrics": {}
+    },
+    {
+      "id": "18192147472328784",
+      "permalink": "https://instagram.com/stories/asoble_ohmeotsu/3777056690798138129",
+      "timestamp": "2025-11-30T05:24:24+0000",
+      "metrics": {}
+    },
+    {
+      "id": "18060942755241613",
+      "permalink": "https://instagram.com/stories/asoble_ohmeotsu/3777053075182309515",
+      "timestamp": "2025-11-30T05:17:13+0000",
+      "metrics": {}
+    },
+    {
+      "id": "18384789949146588",
+      "permalink": "https://instagram.com/stories/asoble_ohmeotsu/3776994423268287836",
+      "timestamp": "2025-11-30T03:20:41+0000",
+      "metrics": {}
+    },
+    {
+      "id": "18055594166644162",
+      "permalink": "https://instagram.com/stories/asoble_ohmeotsu/3776416680860306575",
+      "timestamp": "2025-11-29T08:12:47+0000",
+      "metrics": {}
+    },
+    {
+      "id": "18087196582810540",
+      "permalink": "https://instagram.com/stories/asoble_ohmeotsu/3776406538840308682",
+      "timestamp": "2025-11-29T07:52:39+0000",
+      "metrics": {}
+    }
+  ]
+}
