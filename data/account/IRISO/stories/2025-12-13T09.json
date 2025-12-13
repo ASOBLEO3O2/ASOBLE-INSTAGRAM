@@ -1,0 +1,16 @@
+{
+  "store": "IRISO",
+  "fetched_at_utc": "2025-12-13T09:21:37.757Z",
+  "fetched_at_jst": "2025-12-13T18:21:37.757+09:00",
+  "source": "ig_graph_v23.0",
+  "granularity": "hourly",
+  "version": "v1",
+  "items": [
+    {
+      "id": "18545297827025026",
+      "permalink": "https://www.instagram.com/stories/kininal_asoble_iriso/3786499329926734678",
+      "timestamp": "2025-12-13T06:05:14+0000",
+      "metrics": {}
+    }
+  ]
+}
