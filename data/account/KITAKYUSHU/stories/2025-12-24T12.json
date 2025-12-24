@@ -1,0 +1,16 @@
+{
+  "store": "KITAKYUSHU",
+  "fetched_at_utc": "2025-12-24T12:47:58.891Z",
+  "fetched_at_jst": "2025-12-24T21:47:58.891+09:00",
+  "source": "ig_graph_v23.0",
+  "granularity": "hourly",
+  "version": "v1",
+  "items": [
+    {
+      "id": "18157685263410829",
+      "permalink": "https://www.instagram.com/stories/asoble_kitakyushu/3794319399047116861",
+      "timestamp": "2025-12-24T01:02:21+0000",
+      "metrics": {}
+    }
+  ]
+}
