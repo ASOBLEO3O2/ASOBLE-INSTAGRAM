@@ -1,0 +1,16 @@
+{
+  "store": "OHTU",
+  "fetched_at_utc": "2025-12-28T15:22:24.616Z",
+  "fetched_at_jst": "2025-12-29T00:22:24.616+09:00",
+  "source": "ig_graph_v23.0",
+  "granularity": "hourly",
+  "version": "v1",
+  "items": [
+    {
+      "id": "18069068948420484",
+      "permalink": "https://www.instagram.com/stories/asoble_ohmeotsu/3797447265636432607",
+      "timestamp": "2025-12-28T08:36:50+0000",
+      "metrics": {}
+    }
+  ]
+}
