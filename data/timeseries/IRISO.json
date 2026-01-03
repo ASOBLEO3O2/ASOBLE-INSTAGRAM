@@ -1,7 +1,7 @@
 {
   "store": "IRISO",
   "version": "v1",
-  "updated_at_jst": "2026-01-02",
+  "updated_at_jst": "2026-01-03",
   "granularity": "daily",
   "items": [
     {
@@ -495,6 +495,12 @@
       "posts_count": 0,
       "reels_count": 0,
       "stories_count": 1
+    },
+    {
+      "date": "2026-01-03",
+      "posts_count": 0,
+      "reels_count": 0,
+      "stories_count": 0
     }
   ]
 }
