@@ -1,7 +1,7 @@
 {
   "store": "HONAMI",
   "version": "v1",
-  "updated_at_jst": "2026-01-10",
+  "updated_at_jst": "2026-01-11",
   "granularity": "daily",
   "items": [
     {
@@ -543,6 +543,12 @@
       "posts_count": 0,
       "reels_count": 0,
       "stories_count": 1
+    },
+    {
+      "date": "2026-01-11",
+      "posts_count": 0,
+      "reels_count": 0,
+      "stories_count": 0
     }
   ]
 }
