@@ -1,7 +1,7 @@
 {
   "store": "OHTU",
   "version": "v1",
-  "updated_at_jst": "2026-01-10",
+  "updated_at_jst": "2026-01-11",
   "granularity": "daily",
   "items": [
     {
@@ -542,7 +542,13 @@
       "date": "2026-01-10",
       "posts_count": 0,
       "reels_count": 0,
-      "stories_count": 0
+      "stories_count": 5
+    },
+    {
+      "date": "2026-01-11",
+      "posts_count": 0,
+      "reels_count": 0,
+      "stories_count": 2
     }
   ]
 }
