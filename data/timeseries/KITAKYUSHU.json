@@ -1,7 +1,7 @@
 {
   "store": "KITAKYUSHU",
   "version": "v1",
-  "updated_at_jst": "2026-01-16",
+  "updated_at_jst": "2026-01-17",
   "granularity": "daily",
   "items": [
     {
@@ -578,7 +578,13 @@
       "date": "2026-01-16",
       "posts_count": 0,
       "reels_count": 0,
-      "stories_count": 2
+      "stories_count": 4
+    },
+    {
+      "date": "2026-01-17",
+      "posts_count": 0,
+      "reels_count": 0,
+      "stories_count": 0
     }
   ]
 }
